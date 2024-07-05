@@ -8,6 +8,8 @@ RUN apt-get update \
     && \
     apt-get install -y --no-install-recommends --no-install-suggests \
         python3 \
+        net-tools \
+        nano \
         lib32stdc++6 \
         lib32gcc-s1 \
         libcurl4 \
@@ -27,11 +29,12 @@ RUN apt-get update \
     wget -qO- 'https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz' | tar zxf - -C /steamcmd
 
 ENV ARMA_BINARY=./arma3server
-ENV ARMA_CONFIG=main.cfg
+ENV ARMA_CONFIG=server.cfg
+ENV BASIC_CONFIG=basic.cfg
 ENV ARMA_PARAMS=
 ENV ARMA_PROFILE=main
 ENV ARMA_WORLD=empty
-ENV ARMA_LIMITFPS=1000
+ENV ARMA_LIMITFPS=60
 ENV ARMA_CDLC=
 ENV HEADLESS_CLIENTS=0
 ENV HEADLESS_CLIENTS_PROFILE="\$profile-hc-\$i"
@@ -40,7 +43,7 @@ ENV STEAM_BRANCH=public
 ENV STEAM_BRANCH_PASSWORD=
 ENV STEAM_ADDITIONAL_DEPOT=
 ENV MODS_LOCAL=true
-ENV MODS_PRESET=
+ENV MODS_PRESET=mods.html
 ENV SKIP_INSTALL=false
 
 EXPOSE 2302/udp
@@ -52,13 +55,9 @@ EXPOSE 2306/udp
 WORKDIR /arma3
 
 VOLUME /steamcmd
-VOLUME /arma3/addons
-VOLUME /arma3/enoch
-VOLUME /arma3/expansion
-VOLUME /arma3/jets
-VOLUME /arma3/heli
-VOLUME /arma3/orange
-VOLUME /arma3/argo
+VOLUME /arma3
+VOLUME /var/run/outside/arma3/server-common
+VOLUME /var/run/outside/arma3/this-server
 
 STOPSIGNAL SIGINT
 
