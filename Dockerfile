@@ -32,7 +32,7 @@ RUN apt-get update \
 ENV ARMA_BINARY=./arma3server
 ENV ARMA_CONFIG=server.cfg
 ENV BASIC_CONFIG=basic.cfg
-ENV ARMA_PARAMS=
+ENV PARAM_CONFIG=parameter.cfg
 ENV ARMA_PROFILE=main
 ENV ARMA_WORLD=empty
 ENV ARMA_LIMITFPS=60
@@ -62,6 +62,6 @@ VOLUME /var/run/share/arma3/this-server
 
 STOPSIGNAL SIGINT
 
-COPY *.py /
+COPY launch.py /
 
 CMD ["python3","/launch.py"]
