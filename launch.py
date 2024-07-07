@@ -21,7 +21,8 @@ FOLDER_USERCONFIG = ARMA_ROOT+"/userconfig"
 FOLDER_MPISSIONS = ARMA_ROOT+"/mpmissions"
 
 CONFIG_FILE = FOLDER_CONFIG+os.sep+os.environ["ARMA_CONFIG"]
-SERVER_BASE= ARMA_ROOT+os.sep+os.environ["BASIC_CONFIG"]
+SERVER_BASE = ARMA_ROOT+os.sep+os.environ["BASIC_CONFIG"]
+PARAM_FILE = ARMA_ROOT+os.sep+os.environ["PARAM_CONFIG"]
 PRESET_FILE=FOLDER_CONFIG+os.sep+os.environ["MODS_PRESET"]
 
 WORK_MODS="mods"
@@ -254,8 +255,10 @@ launch += ' -port={} -name="{}" -profiles="/arma3/config/profiles"'.format(
 )
 if os.path.exists(SERVER_BASE):
     launch += ' -cfg="{}"'.format(SERVER_BASE)
-
-launch += ' -loadMissionToMemory -autoInit -bandwidthAlg=2'
+if os.path.exists(PARAM_FILE):
+    with open(PARAM_FILE) as f:
+        cfg_param=f.readline()
+        launch += ' {} '.format(cfg_param)
 
 if len(server_mods):
     launch += mod_param("serverMod", server_mods)
