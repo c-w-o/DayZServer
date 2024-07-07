@@ -22,7 +22,7 @@ FOLDER_MPISSIONS = ARMA_ROOT+"/mpmissions"
 
 CONFIG_FILE = FOLDER_CONFIG+os.sep+os.environ["ARMA_CONFIG"]
 SERVER_BASE = ARMA_ROOT+os.sep+os.environ["BASIC_CONFIG"]
-PARAM_FILE = ARMA_ROOT+os.sep+os.environ["PARAM_CONFIG"]
+PARAM_FILE = FOLDER_CONFIG+os.sep+os.environ["PARAM_CONFIG"]
 PRESET_FILE=FOLDER_CONFIG+os.sep+os.environ["MODS_PRESET"]
 
 WORK_MODS="mods"
