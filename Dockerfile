@@ -56,8 +56,8 @@ WORKDIR /tmp
 
 VOLUME /arma3
 VOLUME /steamcmd
-VOLUME /var/run/outside/arma3/server-common
-VOLUME /var/run/outside/arma3/this-server
+VOLUME /var/run/share/arma3/server-common
+VOLUME /var/run/share/arma3/this-server
 
 STOPSIGNAL SIGINT
 
