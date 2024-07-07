@@ -81,11 +81,12 @@ Profiles are saved in `/arma3/configs/profiles`
 | `-v /arma3/servermods`        | Mods that will only be loaded by the server |
 | `-e PORT`                     | Port used by the server, (uses PORT to PORT+3)            | 2302 |
 | `-e ARMA_BINARY`              | Arma 3 server binary to use, `./arma3server_x64` for x64   | `./arma3server` |
-| `-e ARMA_CONFIG`              | Config file to load from `/arma3/configs`                 | `main.cfg` |
+| `-e ARMA_CONFIG`              | Config file to load from `/arma3/configs`                 | `server.cfg` |
+| `-e BASIC_CONFIG`             | Server speed config file to load from `/arma3/configs`    | `basic.cfg` |
 | `-e ARMA_PARAMS`              | Additional Arma CLI parameters |
 | `-e ARMA_PROFILE`             | Profile name, stored in `/arma3/configs/profiles`         | `main` |
 | `-e ARMA_WORLD`               | World to load on startup                                  | `empty` |
-| `-e ARMA_LIMITFPS`            | Maximum FPS | `1000` |
+| `-e ARMA_LIMITFPS`            | Maximum FPS | `120` |
 | `-e ARMA_CDLC`                | cDLCs to load |
 | `-e STEAM_BRANCH`             | Steam branch used by steamcmd | `public` |
 | `-e STEAM_BRANCH_PASSWORD`    | Steam branch password used by steamcmd |
@@ -93,7 +94,6 @@ Profiles are saved in `/arma3/configs/profiles`
 | `-e STEAM_PASSWORD`           | Steam password |
 | `-e HEADLESS_CLIENTS`         | Launch n number of headless clients                       | `0` |
 | `-e HEADLESS_CLIENTS_PROFILE` | Headless client profile name (supports placeholders)      | `$profile-hc-$i` |
-| `-e MODS_LOCAL`               | Should the mods folder be loaded | `true` |
 | `-e MODS_PRESET`              | An Arma 3 Launcher preset to load |
 | `-e SKIP_INSTALL`             | Skip Arma 3 installation | `false` |
 
@@ -118,21 +118,25 @@ To use a Creator DLC the `STEAM_BRANCH` must be set to `creatordlc`
 `-e ARMA_CDLC="csla;gm;vn;ws;spe"`
 
 ## Loading mods
+A mods.html shoud be provided (e.g. exported form the Arma3 Launcher) which includes all client-side mods, the server should also use. 
 
-### Local
+### Per-Server
+-> those are only available for this server instance and will be loaded in any case. These mods also have precedence over mods from global directory.
 
-1. Place the mods inside `/mods` or `/servermods`.
-2. Be sure that the mod folder is all lowercase and does not show up with quotation marks around it when listing the directory eg `'@ACE(v2)'`
-3. Run the following command from the mods and/or servermods directory to confirm that all the files are lowercase.
-    `find . -depth -exec rename 's/(.*)\/([^\/]*)/$1\/\L$2/' {} \;`
-    If this is NOT the case, the mods will prevent the server from booting.
+1. Place the mods in `server-x/mods` or `server-x/servermods`.
+2. Be sure that the mod folder is all lowercase and does not show up with quotation marks around it when listing the directory eg `'@ACE(v2)'`. Make also sure to replace `:` by `_` and that the addon folders inside the mod folder is all lowercase. Also all .pbo and .paa files have to lowercase.
+3. TODO: provide script to force those rules of (2).
 4. Make sure that each mod contains a lowercase `/addons` folder. This folder also needs to be lowercase in order for the server to load the required PBO files inside.
 5. Start the server.
 
-### Workshop
+### Global Mods
+-> those mods are shared among all server instances and the include folder shold be mounted read-only.
+
+1. Place the mods in `server-common/mods` and DLCs in `server-common/dlcs`.
+2. Same naming rules and conventions apply as for Per-Server mods.
+
 
 Set the environment variable `MODS_PRESET` to the HTML preset file exported from the Arma 3 Launcher. The path can be local file or a URL. A volume can be created at `/arma3/steamapps/workshop/content/107410` to preserve the mods between containers.
 
 `-e MODS_PRESET="my_mods.html"`
 
-`-e MODS_PRESET="http://example.com/my_mods.html"`
