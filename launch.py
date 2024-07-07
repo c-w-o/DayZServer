@@ -1,12 +1,40 @@
+import glob
 import os
 import re
 import shutil
 import subprocess
 from string import Template
+import time
 
-import local
-import workshop
+ARMA_ROOT="/arma3"
+SHARE_ARMA_ROOT="/var/run/share/arma3"
+COMMON_SHARE_ARMA_ROOT="/var/run/share/arma3/server-common"
+THIS_SHARE_ARMA_ROOT="/var/run/share/arma3/this-server"
+STEAM_ROOT="/steamcmd"
 
+FOLDER_KEYS = ARMA_ROOT+"/keys"
+FOLDER_MODS = ARMA_ROOT+"/mods"
+FOLDER_SERVERMODS = ARMA_ROOT+"/servermods"
+FOLDER_ADDONS = ARMA_ROOT+"/addons"
+FOLDER_CONFIG = ARMA_ROOT+"/config"
+FOLDER_USERCONFIG = ARMA_ROOT+"/userconfig"
+FOLDER_MPISSIONS = ARMA_ROOT+"/mpmissions"
+
+CONFIG_FILE = FOLDER_CONFIG+os.sep+os.environ["ARMA_CONFIG"]
+SERVER_BASE= ARMA_ROOT+os.sep+os.environ["BASIC_CONFIG"]
+PRESET_FILE=FOLDER_CONFIG+os.sep+os.environ["MODS_PRESET"]
+
+WORK_MODS="mods"
+WORK_SMODS="servermods"
+
+def logdebug(what):
+    print("logdebug  : {}".format(what), flush=True)
+def lognotice(what):
+    print("NOTICE : {}".format(what), flush=True)
+def logwarning(what):
+    print("WARNING: {}".format(what), flush=True)
+def logerror(what):
+    print("ERROR  : {}".format(what), flush=True)
 
 def mod_param(name, mods):
     return ' -{}="{}" '.format(name, ";".join(mods))
@@ -15,14 +43,125 @@ def mod_param(name, mods):
 def env_defined(key):
     return key in os.environ and len(os.environ[key]) > 0
 
+def make_sure_dir(path):
+    if not os.path.isdir(path):
+        if os.path.exists(path):
+            logwarning("{} is not a dir, removing".format(path))
+            os.remove(path)
+        os.makedirs(path)
+        lognotice("{} created".format(path))
 
-CONFIG_FILE = os.environ["ARMA_CONFIG"]
-KEYS = "/arma3/keys"
+def link_it(what, to):
+    if not os.path.exists(to):
+        os.symlink(what, to)
+        lognotice("{} linked to {}".format(what, to))
+    else:
+        logwarning("{} exists, cannot link {}".format(to, what))
 
-if not os.path.isdir(KEYS):
-    if os.path.exists(KEYS):
-        os.remove(KEYS)
-    os.makedirs(KEYS)
+def get_mods_from_dir(d):
+    mods = []
+
+    # Find mod folders
+    for m in os.listdir(d):
+        moddir = os.path.join(d, m)
+        moddir="mods/"+m
+        #logdebug("mods: {}".format(moddir))
+        mods.append(moddir)
+
+    return mods
+
+def copy_key(moddir, keyfolder):
+    keys = glob.glob(os.path.join(moddir, "**/*.bikey"))
+    if len(keys) > 0:
+        for key in keys:
+            if not os.path.isdir(key):
+                shutil.copy2(key, keyfolder)
+    else:
+        logwarning("Missing keys: {}".format(moddir))
+
+    
+def filter_preset_mods(preset_file, local_mods):
+    mods = []
+    presmods=[]
+    moddirs = []
+    with open(preset_file) as f:
+        html = f.read()
+        regex=r"<tr[\s\S]*?DisplayName\">(.*?)<\/td>[\s\S]*?filedetails\/\?id=(\d+)[\s\S]*?<\/tr>"
+
+        matches = re.finditer(regex, html, re.MULTILINE)
+        for _, match in enumerate(matches, start=1):
+            dispname=match.group(1).replace(":","-")
+            #for mod in local_mods:
+                #logdebug("mod: {} - {}".format(mod, dispname))
+            #    if os.path.basename(os.path.normpath(mod))=="@"+dispname:
+            #        moddirs.append(mod)
+            if "mods/@" + dispname in local_mods: 
+                moddir = "mods/@" + dispname
+                moddirs.append(moddir)
+            
+    return moddirs
+
+def correct_server_mods(smods):
+    mods = []
+    WORK_SMODS
+    for mod in smods:
+        modname=os.path.basename(os.path.normpath(mod))
+        mods.append(mods)
+    return mods
+
+print("", flush=True)
+print("", flush=True)
+print("HALLO WELT, HALLO DON!", flush=True)
+
+lognotice("preparing server...")
+for item in os.listdir(ARMA_ROOT):
+    if os.path.islink(item):
+        logdebug("unlink {}".format(item))
+        os.unlink(item)
+    elif os.path.isdir(item):
+        logdebug("rm {}".format(item))
+        shutil.rmtree(item)
+    else:
+        logwarning("unknown {}".format(item))
+
+# prepare folders from outside and inside
+
+make_sure_dir(FOLDER_KEYS)
+make_sure_dir(FOLDER_MODS)
+make_sure_dir(FOLDER_SERVERMODS)
+make_sure_dir(FOLDER_ADDONS)
+#make_sure_dir(FOLDER_MPISSIONS)
+ 
+link_it(THIS_SHARE_ARMA_ROOT+"/config", ARMA_ROOT+"/config")
+link_it(THIS_SHARE_ARMA_ROOT+"/userconfig", ARMA_ROOT+"/userconfig")
+link_it(THIS_SHARE_ARMA_ROOT+"/logs", ARMA_ROOT+"/logs")
+
+if os.path.exists(THIS_SHARE_ARMA_ROOT+"/mpmissions"):
+    link_it(THIS_SHARE_ARMA_ROOT+"/mpmissions", ARMA_ROOT+"/mpmissions")
+
+for item in os.listdir(THIS_SHARE_ARMA_ROOT+"/mods"):
+    src=os.path.join(THIS_SHARE_ARMA_ROOT+"/mods", item)
+    link_it(src, FOLDER_MODS+os.sep+item)
+    copy_key(FOLDER_MODS+os.sep+item, FOLDER_KEYS)
+
+for item in os.listdir(COMMON_SHARE_ARMA_ROOT+"/mods"):
+    src=os.path.join(COMMON_SHARE_ARMA_ROOT+"/mods", item)
+    link_it(src, FOLDER_MODS+os.sep+item)
+    copy_key(FOLDER_MODS+os.sep+item, FOLDER_KEYS)
+    
+for item in os.listdir(COMMON_SHARE_ARMA_ROOT+"/dlcs"):
+    src=os.path.join(COMMON_SHARE_ARMA_ROOT+"/dlcs", item)
+    link_it(src, ARMA_ROOT+os.sep+item)
+    copy_key(ARMA_ROOT+os.sep+item, FOLDER_KEYS)
+    
+for item in os.listdir(THIS_SHARE_ARMA_ROOT+"/servermods"):
+    src=os.path.join(THIS_SHARE_ARMA_ROOT+"/servermods", item)
+    link_it(src, FOLDER_SERVERMODS+os.sep+item)
+    copy_key(FOLDER_SERVERMODS+os.sep+item, FOLDER_KEYS)
+
+link_it(COMMON_SHARE_ARMA_ROOT+"/basic.cfg", ARMA_ROOT+"/basic.cfg")
+
+# add the server itself
 
 if os.environ["SKIP_INSTALL"] in ["", "false"]:
     # Install Arma
@@ -36,39 +175,26 @@ if os.environ["SKIP_INSTALL"] in ["", "false"]:
     if env_defined("STEAM_BRANCH_PASSWORD"):
         steamcmd.extend(["-betapassword", os.environ["STEAM_BRANCH_PASSWORD"]])
     steamcmd.extend(["validate"])
-    if env_defined("STEAM_ADDITIONAL_DEPOT"):
-        for depot in os.environ["STEAM_ADDITIONAL_DEPOT"].split("|"):
-            depot_parts = depot.split(",")
-            steamcmd.extend(
-                ["+login", os.environ["STEAM_USER"], os.environ["STEAM_PASSWORD"]]
-            )
-            steamcmd.extend(
-                ["+download_depot", "233780", depot_parts[0], depot_parts[1]]
-            )
     steamcmd.extend(["+quit"])
     subprocess.call(steamcmd)
-
-if env_defined("STEAM_ADDITIONAL_DEPOT"):
-    for depot in os.environ["STEAM_ADDITIONAL_DEPOT"].split("|"):
-        depot_parts = depot.split(",")
-        depot_dir = (
-            f"/steamcmd/linux32/steamapps/content/app_233780/depot_{depot_parts[0]}/"
-        )
-        for file in os.listdir(depot_dir):
-            shutil.copytree(depot_dir + file, "/arma3/", dirs_exist_ok=True)
-            print(f"Moved {file} to /arma3")
 
 # Mods
 
 mods = []
+local_mods = []     # all possible mods
+preset_mods = []
+server_mods=[]
+
+if os.path.exists(ARMA_ROOT+os.sep+"mods"):
+    local_mods.extend(get_mods_from_dir(FOLDER_MODS))
 
 if os.environ["MODS_PRESET"] != "":
-    mods.extend(workshop.preset(os.environ["MODS_PRESET"]))
+    preset_mods.extend(filter_preset_mods(PRESET_FILE, local_mods))
+    mods.extend(preset_mods)
 
-if os.environ["MODS_LOCAL"] == "true" and os.path.exists("mods"):
-    mods.extend(local.mods("mods"))
+server_mods=get_mods_from_dir(FOLDER_SERVERMODS)
 
-launch = "{} -limitFPS={} -world={} {} {}".format(
+launch = "{} -filePatching -limitFPS={} -world={} {} {}".format(
     os.environ["ARMA_BINARY"],
     os.environ["ARMA_LIMITFPS"],
     os.environ["ARMA_WORLD"],
@@ -79,12 +205,12 @@ launch = "{} -limitFPS={} -world={} {} {}".format(
 if os.environ["ARMA_CDLC"] != "":
     for cdlc in os.environ["ARMA_CDLC"].split(";"):
         launch += " -mod={}".format(cdlc)
-
+print("WOULD LAUNCH ARMA SERVER WITH", launch, flush=True)
 clients = int(os.environ["HEADLESS_CLIENTS"])
 print("Headless Clients:", clients)
 
 if clients != 0:
-    with open("/arma3/configs/{}".format(CONFIG_FILE)) as config:
+    with open(CONFIG_FILE) as config:
         data = config.read()
         regex = r"(.+?)(?:\s+)?=(?:\s+)?(.+?)(?:$|\/|;)"
 
@@ -121,14 +247,19 @@ if clients != 0:
         subprocess.Popen(hc_launch, shell=True)
 
 else:
-    launch += ' -config="/arma3/configs/{}"'.format(CONFIG_FILE)
+    launch += ' -config="{}"'.format(CONFIG_FILE)
 
-launch += ' -port={} -name="{}" -profiles="/arma3/configs/profiles"'.format(
+launch += ' -port={} -name="{}" -profiles="/arma3/config/profiles"'.format(
     os.environ["PORT"], os.environ["ARMA_PROFILE"]
 )
+if os.path.exists(SERVER_BASE):
+    launch += ' -cfg="{}"'.format(SERVER_BASE)
 
-if os.path.exists("servermods"):
-    launch += mod_param("serverMod", local.mods("servermods"))
+launch += ' -loadMissionToMemory -autoInit -bandwidthAlg=2'
+
+if len(server_mods):
+    launch += mod_param("serverMod", server_mods)
 
 print("LAUNCHING ARMA SERVER WITH", launch, flush=True)
+
 os.system(launch)
