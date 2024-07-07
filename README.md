@@ -44,7 +44,7 @@ An Arma 3 Dedicated Server. Updates to the latest version every time it is resta
         -v arma3/server-0:/var/run/share/arma3/this-server \
         -v arma3/server-common:/var/run/share/arma3/server-common \
         -e ARMA_CONFIG=server.cfg \
-        -e BASIC_CONFIG=basic cfg \
+        -e BASIC_CONFIG=basic.cfg \
         -e STEAM_USER=myusername \
         -e STEAM_PASSWORD=mypassword \
         ghcr.io/brettmayson/arma3server/arma3server:latest
