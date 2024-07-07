@@ -9,19 +9,25 @@ An Arma 3 Dedicated Server. Updates to the latest version every time it is resta
     + scripts
     + server-0
     |    + config
-    |    |    + main.cfg
+    |    |    + server.cfg
     |    |    + mods.html
+    |    |    + profiles
     |    + logs
     |    + mods
     |    |    + < server instance specific mods >
     |    + mpmissions
     |    |    + custom_mission.Malden.pbo
     |    + servermods
+    |    |    + @FileXT
     |    + userconfig
-
-
+    |         + cba_settings.sqf
+    + server-common
+         + dlcs
+         + mods
+         + basic.cfg
 
 ```
+
 
 ## Usage
 
@@ -35,11 +41,10 @@ An Arma 3 Dedicated Server. Updates to the latest version every time it is resta
         -p 2304:2304/udp \
         -p 2305:2305/udp \
         -p 2306:2306/udp \
-        -v path/to/missions:/arma3/mpmissions \
-        -v path/to/configs:/arma3/configs \
-        -v path/to/mods:/arma3/mods \
-        -v path/to/servermods:/arma3/servermods \
-        -e ARMA_CONFIG=main.cfg \
+        -v arma3/server-0:/var/run/share/arma3/this-server \
+        -v arma3/server-common:/var/run/share/arma3/server-common \
+        -e ARMA_CONFIG=server.cfg \
+        -e BASIC_CONFIG=basic cfg \
         -e STEAM_USER=myusername \
         -e STEAM_PASSWORD=mypassword \
         ghcr.io/brettmayson/arma3server/arma3server:latest
