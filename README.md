@@ -2,6 +2,27 @@
 
 An Arma 3 Dedicated Server. Updates to the latest version every time it is restarted.
 
+## Expected / preferred folder structure on host
+
+```
+/home/docker/arma3
+    + scripts
+    + server-0
+    |    + config
+    |    |    + main.cfg
+    |    |    + mods.html
+    |    + logs
+    |    + mods
+    |    |    + < server instance specific mods >
+    |    + mpmissions
+    |    |    + custom_mission.Malden.pbo
+    |    + servermods
+    |    + userconfig
+
+
+
+```
+
 ## Usage
 
 ### Docker CLI
