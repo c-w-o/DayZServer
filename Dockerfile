@@ -41,10 +41,10 @@ ENV HEADLESS_CLIENTS_PROFILE="\$profile-hc-\$i"
 ENV PORT=2302
 ENV STEAM_BRANCH=public
 ENV STEAM_BRANCH_PASSWORD=
-ENV STEAM_ADDITIONAL_DEPOT=
-ENV MODS_LOCAL=true
 ENV MODS_PRESET=mods.html
 ENV SKIP_INSTALL=false
+ENV STEAM_USER=
+ENV STEAM_PASSWORD=
 
 EXPOSE 2302/udp
 EXPOSE 2303/udp
@@ -52,10 +52,10 @@ EXPOSE 2304/udp
 EXPOSE 2305/udp
 EXPOSE 2306/udp
 
-WORKDIR /arma3
+WORKDIR /tmp
 
-VOLUME /steamcmd
 VOLUME /arma3
+VOLUME /steamcmd
 VOLUME /var/run/outside/arma3/server-common
 VOLUME /var/run/outside/arma3/this-server
 
