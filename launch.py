@@ -1,4 +1,5 @@
 import glob
+import json
 import os
 import re
 import shutil
@@ -24,6 +25,8 @@ CONFIG_FILE = FOLDER_CONFIG+os.sep+os.environ["ARMA_CONFIG"]
 SERVER_BASE = ARMA_ROOT+os.sep+os.environ["BASIC_CONFIG"]
 PARAM_FILE = FOLDER_CONFIG+os.sep+os.environ["PARAM_CONFIG"]
 PRESET_FILE=FOLDER_CONFIG+os.sep+os.environ["MODS_PRESET"]
+JSON_CONFIG = FOLDER_CONFIG+os.sep+"server.json"
+
 
 WORK_MODS="mods"
 WORK_SMODS="servermods"
@@ -170,6 +173,68 @@ for item in os.listdir(THIS_SHARE_ARMA_ROOT+"/servermods"):
     src=os.path.join(THIS_SHARE_ARMA_ROOT+"/servermods", item)
     link_it(src, FOLDER_SERVERMODS+os.sep+item)
     copy_key(FOLDER_SERVERMODS+os.sep+item, FOLDER_KEYS)
+
+jconfig=None
+if os.path.exists(JSON_CONFIG):
+    lognotice("found server.json override file")
+    with open(JSON_CONFIG) as f:
+        try:
+            jconfig = json.load(f)
+        except:
+            logerror("failed to load {}".format(JSON_CONFIG))
+
+if not jconfig is None:
+    active_jcname=jconfig.get("config-name", None);
+    if not active_jcname is None:
+        active_jc=jconfig.get("configs",{}).get(active_jcname, None)
+        if not active_jc is None:
+            if "server-config-file" in active_jc:
+                lognotice("overwrite ARMA_CONFIG with {}".format(active_jc["server-config-file"]))
+                os.environ["ARMA_CONFIG"] = active_jc["server-config-file"]
+                CONFIG_FILE = FOLDER_CONFIG+os.sep+os.environ["ARMA_CONFIG"]
+            if "server-parameters" in active_jc:
+                lognotice("overwrite ARMA_PARAMS with {}".format(active_jc["server-parameters"]))
+                os.environ["ARMA_PARAMS"] = active_jc["server-parameters"]
+                PARAM_FILE = "/does-not-exist"
+            if "server-base-file" in active_jc:
+                lognotice("overwrite BASIC_CONFIG with {}".format(active_jc["server-base-file"]))
+                os.environ["BASIC_CONFIG"] = active_jc["server-base-file"]
+                SERVER_BASE = FOLDER_CONFIG+os.sep+os.environ["BASIC_CONFIG"]
+            if "mod-config-file" in active_jc:
+                lognotice("overwrite MODS_PRESET with {}".format(active_jc["mod-config-file"]))
+                os.environ["MODS_PRESET"] = active_jc["mod-config-file"]
+                PRESET_FILE = FOLDER_CONFIG+os.sep+os.environ["MODS_PRESET"]
+            if "num-headless" in active_jc:
+                lognotice("overwrite HEADLESS_CLIENTS with {}".format(active_jc["num-headless"]))
+                os.environ["HEADLESS_CLIENTS"]=active_jc["num-headless"]
+            if not active_jc.get("creator-dlc", None) is None:
+                if active_jc["creator-dlc"].get("enable-creator", False):
+                    os.environ["STEAM_BRANCH"]="creatordlc"
+                    os.environ["STEAM_BRANCH_PASSWORD"]=""
+                    os.environ["ARMA_CDLC"]=""
+                if active_jc["creator-dlc"].get("csla-iron-curtain", False):
+                    if len(os.environ["ARMA_CDLC"]) > 0:
+                        os.environ["ARMA_CDLC"]+=";"
+                    os.environ["ARMA_CDLC"]+="csla"
+                if active_jc["creator-dlc"].get("global-mobilization-cold-war", False):
+                    if len(os.environ["ARMA_CDLC"]) > 0:
+                        os.environ["ARMA_CDLC"]+=";"
+                    os.environ["ARMA_CDLC"]+="gm"
+                if active_jc["creator-dlc"].get("s.o.g.-prairie-fire", False):
+                    if len(os.environ["ARMA_CDLC"]) > 0:
+                        os.environ["ARMA_CDLC"]+=";"
+                    os.environ["ARMA_CDLC"]+="vn"
+                if active_jc["creator-dlc"].get("western-sahara", False):
+                    if len(os.environ["ARMA_CDLC"]) > 0:
+                        os.environ["ARMA_CDLC"]+=";"
+                    os.environ["ARMA_CDLC"]+="ws"
+                if active_jc["creator-dlc"].get("spearhead-1944", False):
+                    if len(os.environ["ARMA_CDLC"]) > 0:
+                        os.environ["ARMA_CDLC"]+=";"
+                    os.environ["ARMA_CDLC"]+="spe"
+                    
+                        
+
 
 link_it(COMMON_SHARE_ARMA_ROOT+"/basic.cfg", ARMA_ROOT+"/basic.cfg")
 
