@@ -1,0 +1,55 @@
+{
+    "config-name":"full-creator",
+    
+    "configs":{
+        "full-creator": {
+            "mod-config-file":"mods.html",
+            "server-config-file": "server.cfg",
+            "server-parameters" : "-autoInit -bandwidthAlg=2",
+            
+            "num-headless": 2,
+            
+            "creator-dlc": {
+                "enable-creator": true,
+                "csla-iron-curtain": true,
+                "global-mobilization-cold-war": true,
+                "s.o.g.-prairie-fire": true,
+                "western-sahara": true,
+                "spearhead-1944": true
+            }
+            
+        },
+        "standard-mods_v10.html": {
+            "mod-config-file":"Mods_V10.html",
+            "server-config-file": "server.cfg",
+            "server-parameters" : "-autoInit -bandwidthAlg=2",
+            
+            "num-headless": 2,
+            
+            "creator-dlc": {
+                "enable-creator": false,
+                "csla-iron-curtain": false,
+                "global-mobilization-cold-war": false,
+                "s.o.g.-prairie-fire": false,
+                "western-sahara": false,
+                "spearhead-1944": false
+            }
+        },
+        "test-mods_v12.html": {
+            "mod-config-file":"Mods_V12.html",
+            "server-config-file": "server.cfg",
+            "server-parameters" : "-autoInit -bandwidthAlg=2",
+            
+            "num-headless": 2,
+            
+            "creator-dlc": {
+                "enable-creator": false,
+                "csla-iron-curtain": false,
+                "global-mobilization-cold-war": false,
+                "s.o.g.-prairie-fire": false,
+                "western-sahara": false,
+                "spearhead-1944": false
+            }
+        }
+    }
+}
