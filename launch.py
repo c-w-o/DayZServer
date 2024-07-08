@@ -116,6 +116,8 @@ print("HALLO WELT, HALLO DON!", flush=True)
 
 lognotice("preparing server...")
 for item in os.listdir(ARMA_ROOT):
+    if item == "steamapps" or item == "battleye":
+        continue
     if os.path.islink(item):
         logdebug("unlink {}".format(item))
         os.unlink(item)
