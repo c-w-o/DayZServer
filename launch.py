@@ -140,6 +140,15 @@ link_it(THIS_SHARE_ARMA_ROOT+"/logs", ARMA_ROOT+"/logs")
 if os.path.exists(THIS_SHARE_ARMA_ROOT+"/mpmissions"):
     link_it(THIS_SHARE_ARMA_ROOT+"/mpmissions", ARMA_ROOT+"/mpmissions")
 
+if os.path.exists(THIS_SHARE_ARMA_ROOT+"/maps"):
+    link_it(THIS_SHARE_ARMA_ROOT+"/maps", ARMA_ROOT+"/mods")
+
+if os.path.exists(COMMON_SHARE_ARMA_ROOT+"/maps"):
+    for item in os.listdir(COMMON_SHARE_ARMA_ROOT+"/maps"):
+        src=os.path.join(COMMON_SHARE_ARMA_ROOT+"/maps", item)
+        link_it(src, FOLDER_MODS+os.sep+item)
+        copy_key(FOLDER_MODS+os.sep+item, FOLDER_KEYS)
+        
 for item in os.listdir(THIS_SHARE_ARMA_ROOT+"/mods"):
     src=os.path.join(THIS_SHARE_ARMA_ROOT+"/mods", item)
     link_it(src, FOLDER_MODS+os.sep+item)
