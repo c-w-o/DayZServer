@@ -206,7 +206,7 @@ if not jconfig is None:
                 PRESET_FILE = FOLDER_CONFIG+os.sep+os.environ["MODS_PRESET"]
             if "num-headless" in active_jc:
                 lognotice("overwrite HEADLESS_CLIENTS with {}".format(active_jc["num-headless"]))
-                os.environ["HEADLESS_CLIENTS"]=active_jc["num-headless"]
+                os.environ["HEADLESS_CLIENTS"]=str(active_jc["num-headless"])
             if not active_jc.get("creator-dlc", None) is None:
                 if active_jc["creator-dlc"].get("enable-creator", False):
                     os.environ["STEAM_BRANCH"]="creatordlc"
