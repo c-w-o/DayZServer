@@ -132,7 +132,7 @@ for item in os.listdir(ARMA_ROOT):
 make_sure_dir(FOLDER_KEYS)
 make_sure_dir(FOLDER_MODS)
 make_sure_dir(FOLDER_SERVERMODS)
-make_sure_dir(FOLDER_ADDONS)
+#make_sure_dir(FOLDER_ADDONS)
 #make_sure_dir(FOLDER_MPISSIONS)
  
 link_it(THIS_SHARE_ARMA_ROOT+"/config", ARMA_ROOT+"/config")
