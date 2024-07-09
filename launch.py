@@ -124,8 +124,9 @@ def filter_preset_mods(preset_file, local_mods):
             #        moddirs.append(mod)
             if "mods/@" + dispname in local_mods: 
                 moddir = "mods/@" + dispname
+                s=get_folder_size(ARMA_ROOT+os.sep+moddir)
                 moddirs.append(moddir)
-                lognotice("modfolder {} found : {}".format(i, moddir))
+                lognotice("modfolder {} found : {} ({})".format(i, moddir, float(s)/1048576))
             elif "mods/" + match.group(2) in local_mods: 
                 moddir = "mods/" + match.group(2)
                 moddirs.append(moddir)
