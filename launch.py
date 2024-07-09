@@ -105,7 +105,7 @@ def filter_preset_mods(preset_file, local_mods):
 
         matches = re.finditer(regex, html, re.MULTILINE)
         for _, match in enumerate(matches, start=1):
-            dispname=match.group(1).replace(":","-").rstrip(".,)
+            dispname=match.group(1).replace(":","-").rstrip(".,")
             #for mod in local_mods:
                 #logdebug("mod: {} - {}".format(mod, dispname))
             #    if os.path.basename(os.path.normpath(mod))=="@"+dispname:
