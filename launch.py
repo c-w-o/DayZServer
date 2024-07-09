@@ -83,13 +83,24 @@ def copy_key(moddir, keyfolder):
     else:
         logwarning("Missing keys: {}".format(moddir))
 
+def steam_download(mods):
+    steamcmd = ["/steamcmd/steamcmd.sh"]
+    steamcmd.extend(["+force_install_dir", FOLDER_MODS])
+    steamcmd.extend(["+login", os.environ["STEAM_USER"], os.environ["STEAM_PASSWORD"]])
+    for id in mods:
+        steamcmd.extend(["+workshop_download_item", "107410", id])
+    steamcmd.extend(["+quit"])
+    lognotice("modfolder - downloading: {}".format(steamcmd);
+    subprocess.call(steamcmd)
     
 def filter_preset_mods(preset_file, local_mods):
     mods = []
+    mis = []
     presmods=[]
     moddirs = []
     with open(preset_file) as f:
         html = f.read()
+        lognotice("modfolder - config size {}".format(len(html))
         regex=r"<tr[\s\S]*?DisplayName\">(.*?)<\/td>[\s\S]*?filedetails\/\?id=(\d+)[\s\S]*?<\/tr>"
 
         matches = re.finditer(regex, html, re.MULTILINE)
@@ -103,9 +114,17 @@ def filter_preset_mods(preset_file, local_mods):
                 moddir = "mods/@" + dispname
                 moddirs.append(moddir)
                 lognotice("modfolder found: {}".format(moddir))
+            elif "mods/" + match.group(2) in local_mods: 
+                moddir = "mods/" + match.group(2)
+                moddirs.append(moddir)
+                lognotice("modfolder found: {} for {}".format(moddir, dispname))
             else:
-                logerror("modfolder not found: @{}".format(dispname))
-                
+                logwarning("modfolder not found: @{} or {]".format(dispname, match.group(2)))
+                moddir = "mods/" + match.group(2)
+                moddirs.append(moddir)
+                mis.append(match.group(2))
+        if len(mis) > 0:
+            steam_download(mis)
             
     return moddirs
 
