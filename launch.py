@@ -137,9 +137,9 @@ def filter_preset_mods(preset_file, local_mods):
                 moddirs.append(moddir)
                 mis.append(match.group(2))
             i+=1
-        # would only work with an account which owns the Arma3 Client. Dedicated server is not allowed to download.
-        #if len(mis) > 0:
-        #    steam_download(mis)
+        
+        if len(mis) > 0:
+            steam_download(mis)
             
     return moddirs
 
