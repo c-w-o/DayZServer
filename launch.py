@@ -62,6 +62,17 @@ def link_it(what, to):
     else:
         logwarning("{} exists, cannot link {}".format(to, what))
 
+def get_folder_size(start_path = '.'):
+    total_size = 0
+    for dirpath, dirnames, filenames in os.walk(start_path):
+        for f in filenames:
+            fp = os.path.join(dirpath, f)
+            # skip if it is symbolic link
+            if not os.path.islink(fp):
+                total_size += os.path.getsize(fp)
+
+    return total_size
+    
 def get_mods_from_dir(d):
     mods = []
 
@@ -294,6 +305,12 @@ if os.path.exists(ARMA_ROOT+os.sep+"mods"):
 if os.environ["MODS_PRESET"] != "":
     preset_mods.extend(filter_preset_mods(PRESET_FILE, local_mods))
     mods.extend(preset_mods)
+
+mods_size=0
+for mod in mods:
+    mods_size+=get_folder_size(ARMA_ROOT+os.sep+mod)
+
+lognotice("Estimated size of mods: {}".format(mods_size))
 
 server_mods=get_mods_from_dir(FOLDER_SERVERMODS)
 
