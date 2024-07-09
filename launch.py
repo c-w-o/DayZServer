@@ -100,7 +100,7 @@ def filter_preset_mods(preset_file, local_mods):
     moddirs = []
     with open(preset_file) as f:
         html = f.read()
-        lognotice("modfolder - config size {}".format(len(html))
+        lognotice("modfolder - config size {}".format(len(html)))
         regex=r"<tr[\s\S]*?DisplayName\">(.*?)<\/td>[\s\S]*?filedetails\/\?id=(\d+)[\s\S]*?<\/tr>"
 
         matches = re.finditer(regex, html, re.MULTILINE)
