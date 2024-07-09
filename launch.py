@@ -102,6 +102,10 @@ def filter_preset_mods(preset_file, local_mods):
             if "mods/@" + dispname in local_mods: 
                 moddir = "mods/@" + dispname
                 moddirs.append(moddir)
+                lognotice("modfolder found: {}".format(moddir))
+            else:
+                logerror("modfolder not found: @{}".format(dispname))
+                
             
     return moddirs
 
