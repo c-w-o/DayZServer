@@ -105,7 +105,7 @@ def filter_preset_mods(preset_file, local_mods):
 
         matches = re.finditer(regex, html, re.MULTILINE)
         for _, match in enumerate(matches, start=1):
-            dispname=match.group(1).replace(":","-")
+            dispname=match.group(1).replace(":","-").rstrip(".,)
             #for mod in local_mods:
                 #logdebug("mod: {} - {}".format(mod, dispname))
             #    if os.path.basename(os.path.normpath(mod))=="@"+dispname:
@@ -123,8 +123,9 @@ def filter_preset_mods(preset_file, local_mods):
                 moddir = "mods/" + match.group(2)
                 moddirs.append(moddir)
                 mis.append(match.group(2))
-        if len(mis) > 0:
-            steam_download(mis)
+        # would only work with an account which owns the Arma3 Client. Dedicated server is not allowed to download.
+        #if len(mis) > 0:
+        #    steam_download(mis)
             
     return moddirs
 
