@@ -119,7 +119,7 @@ def filter_preset_mods(preset_file, local_mods):
                 moddirs.append(moddir)
                 lognotice("modfolder found: {} for {}".format(moddir, dispname))
             else:
-                logwarning("modfolder not found: @{} or {]".format(dispname, match.group(2)))
+                logwarning("modfolder not found: @{} or {}".format(dispname, match.group(2)))
                 moddir = "mods/" + match.group(2)
                 moddirs.append(moddir)
                 mis.append(match.group(2))
