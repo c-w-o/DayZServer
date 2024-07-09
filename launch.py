@@ -90,7 +90,7 @@ def steam_download(mods):
     for id in mods:
         steamcmd.extend(["+workshop_download_item", "107410", id])
     steamcmd.extend(["+quit"])
-    lognotice("modfolder - downloading: {}".format(steamcmd);
+    lognotice("modfolder - downloading: {}".format(steamcmd));
     subprocess.call(steamcmd)
     
 def filter_preset_mods(preset_file, local_mods):
