@@ -104,6 +104,7 @@ def filter_preset_mods(preset_file, local_mods):
         regex=r"<tr[\s\S]*?DisplayName\">(.*?)<\/td>[\s\S]*?filedetails\/\?id=(\d+)[\s\S]*?<\/tr>"
 
         matches = re.finditer(regex, html, re.MULTILINE)
+        i=0
         for _, match in enumerate(matches, start=1):
             dispname=match.group(1).replace(":","-").rstrip(".,")
             #for mod in local_mods:
@@ -113,16 +114,17 @@ def filter_preset_mods(preset_file, local_mods):
             if "mods/@" + dispname in local_mods: 
                 moddir = "mods/@" + dispname
                 moddirs.append(moddir)
-                lognotice("modfolder found: {}".format(moddir))
+                lognotice("modfolder {} found : {}".format(i, moddir))
             elif "mods/" + match.group(2) in local_mods: 
                 moddir = "mods/" + match.group(2)
                 moddirs.append(moddir)
-                lognotice("modfolder found: {} for {}".format(moddir, dispname))
+                lognotice("modfolder {} found: {} for {}".format(i, moddir, dispname))
             else:
-                logwarning("modfolder not found: @{} or {}".format(dispname, match.group(2)))
+                logwarning("modfolder {} not found: @{} or {}".format(i, dispname, match.group(2)))
                 moddir = "mods/" + match.group(2)
                 moddirs.append(moddir)
                 mis.append(match.group(2))
+            i+=1
         # would only work with an account which owns the Arma3 Client. Dedicated server is not allowed to download.
         #if len(mis) > 0:
         #    steam_download(mis)
