@@ -103,6 +103,12 @@ def steam_download(mods):
     steamcmd.extend(["+quit"])
     lognotice("modfolder - downloading: {}".format(steamcmd));
     subprocess.call(steamcmd)
+    workshop_dir=FOLDER_MODS+os.sep+"steamapps/workshop/content/107410"
+    for m in os.listdir(workshop_dir):
+        share_dir=COMMON_SHARE_ARMA_ROOT+os.sep+"mods"+os.sep+m
+        shutil.move(os.path.join(workshop_dir, m), share_dir)
+        link_it(share_dir, FOLDER_MODS+os.sep+m)
+        copy_key(FOLDER_MODS+os.sep+m, FOLDER_KEYS)
     
 def filter_preset_mods(preset_file, local_mods):
     mods = []
