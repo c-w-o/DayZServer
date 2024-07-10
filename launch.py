@@ -390,6 +390,7 @@ lognotice("estimated size of mods: {}".format(mods_size))
 
 server_mods=get_mods_from_dir(FOLDER_SERVERMODS, type="servermods")
 if not NEW_SRVMOD_LIST is None:
+    lognotice("{} --- {}".format(server_mods,NEW_SRVMOD_LIST))
     server_mods=filter_preset_mods(server_mods, cfg_list=NEW_SRVMOD_LIST, type="servermods")
 
 launch = "{} -filePatching -limitFPS={} -world={} {} {}".format(
