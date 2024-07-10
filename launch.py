@@ -98,12 +98,12 @@ def fix_folder_characters(path):
     for subdir, dirs, files in os.walk(path):
         for file in files:
             if file.lower()!=file and (file.endswith(".pbo") or file.endswith(".paa") or file.endswith(".sqf")):
-                lognotice("to lower FILE: {} -> {}".format(subdir + os.sep + file, file.lower()))
-                os.rename(subdir + os.sep + file, subdir + os.sep + file.lower())
+                #lognotice("to lower FILE: {} -> {}".format(subdir + os.sep + file, file.lower()))
+                #os.rename(subdir + os.sep + file, subdir + os.sep + file.lower())
 
                 for sfile in files:
                     if sfile.startswith(file) and sfile.lower() != sfile:
-                        lognotice("to lower FILE_: {} -> {}".format(subdir + os.sep + sfile, sfile.lower()))
+                        lognotice("to lower FILE: {} -> {}".format(subdir + os.sep + sfile, sfile.lower()))
                         os.rename(subdir + os.sep + sfile, subdir + os.sep + sfile.lower())
                         
         for dir in dirs:
