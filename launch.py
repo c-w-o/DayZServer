@@ -198,7 +198,10 @@ print("", flush=True)
 print("HALLO WELT, HALLO DON!", flush=True)
 debug_skip_install=False
 
+print("", flush=True)
 lognotice("preparing server...")
+print("", flush=True)
+
 for item in os.listdir(ARMA_ROOT):
     if item == "steamapps" or item == "battleye":
         continue
@@ -259,6 +262,10 @@ for item in os.listdir(THIS_SHARE_ARMA_ROOT+"/servermods"):
     fix_folder_characters(src)
     link_it(src, FOLDER_SERVERMODS+os.sep+item)
     copy_key(FOLDER_SERVERMODS+os.sep+item, FOLDER_KEYS)
+
+print("", flush=True)
+lognotice("checking for json config...")
+print("", flush=True)
 
 jconfig=None
 if os.path.exists(JSON_CONFIG):
@@ -334,6 +341,10 @@ link_it(COMMON_SHARE_ARMA_ROOT+"/basic.cfg", ARMA_ROOT+"/basic.cfg")
 
 # add the server itself
 
+print("", flush=True)
+lognotice("install / update arma server binary...")
+print("", flush=True)
+
 if os.environ["SKIP_INSTALL"] in ["", "false"] and debug_skip_install==False:
     # Install Arma
 
@@ -350,6 +361,10 @@ if os.environ["SKIP_INSTALL"] in ["", "false"] and debug_skip_install==False:
     subprocess.call(steamcmd)
 
 # Mods
+
+print("", flush=True)
+lognotice("checking mods...")
+print("", flush=True)
 
 mods = []
 local_mods = []     # all possible mods
@@ -370,7 +385,7 @@ mods_size=0
 for mod in mods:
     mods_size+=get_folder_size(ARMA_ROOT+os.sep+mod)
 
-lognotice("Estimated size of mods: {}".format(mods_size))
+lognotice("estimated size of mods: {}".format(mods_size))
 
 server_mods=get_mods_from_dir(FOLDER_SERVERMODS, type="servermods")
 if not NEW_SRVMOD_LIST is None:
@@ -387,9 +402,14 @@ launch = "{} -filePatching -limitFPS={} -world={} {} {}".format(
 if os.environ["ARMA_CDLC"] != "":
     for cdlc in os.environ["ARMA_CDLC"].split(";"):
         launch += " -mod={}".format(cdlc)
-print("WOULD LAUNCH ARMA SERVER WITH", launch, flush=True)
+
+
+
 clients = int(os.environ["HEADLESS_CLIENTS"])
-print("Headless Clients:", clients)
+if clients > 0:
+    print("", flush=True)
+    lognotice("starting {} headless clients...".format(clients))
+    print("", flush=True)
 
 if clients != 0:
     with open(CONFIG_FILE) as config:
@@ -430,6 +450,10 @@ if clients != 0:
 
 else:
     launch += ' -config="{}"'.format(CONFIG_FILE)
+
+print("", flush=True)
+lognotice("starting arma dedicated server...")
+print("", flush=True)
 
 launch += ' -port={} -name="{}" -profiles="/arma3/config/profiles"'.format(
     os.environ["PORT"], os.environ["ARMA_PROFILE"]
