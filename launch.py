@@ -1,6 +1,7 @@
 import glob
 import json
 import os
+import pprint
 import re
 import shutil
 import subprocess
@@ -142,12 +143,14 @@ def filter_preset_mods(preset_file, local_mods):
 
         matches = re.finditer(regex, html, re.MULTILINE)
         i=0
+        logmods=[]
         for _, match in enumerate(matches, start=1):
             dispname=match.group(1).replace(":","-").rstrip(".,")
             #for mod in local_mods:
                 #logdebug("mod: {} - {}".format(mod, dispname))
             #    if os.path.basename(os.path.normpath(mod))=="@"+dispname:
             #        moddirs.append(mod)
+            logmods.append( [ dispname, match.group(2)])
             if "mods/@" + dispname in local_mods: 
                 moddir = "mods/@" + dispname
                 s=get_folder_size(ARMA_ROOT+os.sep+moddir)
@@ -163,10 +166,10 @@ def filter_preset_mods(preset_file, local_mods):
                 moddirs.append(moddir)
                 mis.append(match.group(2))
             i+=1
-        
+            
         if len(mis) > 0:
             steam_download(mis)
-            
+        pprint(logmods)      
     return moddirs
 
 def correct_server_mods(smods):
