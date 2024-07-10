@@ -294,9 +294,9 @@ if not jconfig is None:
                 lognotice("overwrite BASIC_CONFIG with {}".format(active_jc["server-base-file"]))
                 os.environ["BASIC_CONFIG"] = active_jc["server-base-file"]
                 SERVER_BASE = FOLDER_CONFIG+os.sep+os.environ["BASIC_CONFIG"]
-            if "servermods" in active_js:
+            if "servermods" in active_jc:
                 NEW_SRVMOD_LIST=active_jc["servermods"]
-            if "mods" in active_js:
+            if "mods" in active_jc:
                 NEW_MOD_LIST=active_jc["mods"]
                 logwarning("NEW_MOD_LIST: {}".format(NEW_MOD_LIST))
             elif "mod-config-file" in active_jc:
