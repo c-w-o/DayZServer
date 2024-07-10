@@ -194,14 +194,12 @@ def correct_server_mods(smods):
         mods.append(mods)
     return mods
 
-print("", flush=True)
-print("", flush=True)
-print("HALLO WELT, HALLO DON!", flush=True)
+
+print("\n\nHALLO WELT, HALLO DON!\n", flush=True)
 debug_skip_install=False
 
-print("", flush=True)
-lognotice("preparing server...")
-print("", flush=True)
+
+lognotice("\npreparing server...")
 
 for item in os.listdir(ARMA_ROOT):
     if item == "steamapps" or item == "battleye":
@@ -264,9 +262,9 @@ for item in os.listdir(THIS_SHARE_ARMA_ROOT+"/servermods"):
     link_it(src, FOLDER_SERVERMODS+os.sep+item)
     copy_key(FOLDER_SERVERMODS+os.sep+item, FOLDER_KEYS)
 
-print("", flush=True)
-lognotice("checking for json config...")
-print("", flush=True)
+
+lognotice("\nchecking for json config...")
+
 
 jconfig=None
 if os.path.exists(JSON_CONFIG):
@@ -342,9 +340,9 @@ link_it(COMMON_SHARE_ARMA_ROOT+"/basic.cfg", ARMA_ROOT+"/basic.cfg")
 
 # add the server itself
 
-print("", flush=True)
-lognotice("install / update arma server binary...")
-print("", flush=True)
+
+lognotice("\ninstall / update arma server binary...")
+
 
 if os.environ["SKIP_INSTALL"] in ["", "false"] and debug_skip_install==False:
     # Install Arma
@@ -363,9 +361,9 @@ if os.environ["SKIP_INSTALL"] in ["", "false"] and debug_skip_install==False:
 
 # Mods
 
-print("", flush=True)
-lognotice("checking mods...")
-print("", flush=True)
+
+lognotice("\nchecking mods...")
+
 
 mods = []
 local_mods = []     # all possible mods
@@ -408,9 +406,7 @@ if os.environ["ARMA_CDLC"] != "":
 
 clients = int(os.environ["HEADLESS_CLIENTS"])
 if clients > 0:
-    print("", flush=True)
-    lognotice("starting {} headless clients...".format(clients))
-    print("", flush=True)
+    lognotice("\nstarting {} headless clients...".format(clients))
 
 if clients != 0:
     with open(CONFIG_FILE) as config:
@@ -452,9 +448,9 @@ if clients != 0:
 else:
     launch += ' -config="{}"'.format(CONFIG_FILE)
 
-print("", flush=True)
-lognotice("starting arma dedicated server...")
-print("", flush=True)
+
+lognotice("\nstarting arma dedicated server...")
+
 
 launch += ' -port={} -name="{}" -profiles="/arma3/config/profiles"'.format(
     os.environ["PORT"], os.environ["ARMA_PROFILE"]
