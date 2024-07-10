@@ -172,11 +172,11 @@ def filter_preset_mods(local_mods, preset_file=None, cfg_list=None, type="mods")
                 s=get_folder_size(ARMA_ROOT+os.sep+moddir)
                 moddirs.append(moddir)
                 lognotice("modfolder {} found : {} ({})".format(i, moddir, float(s)/1048576))
-            elif "mods/" + steamid in local_mods: 
+            elif not steamid is None and "mods/" + steamid in local_mods: 
                 moddir = type+"/" + steamid
                 moddirs.append(moddir)
                 lognotice("modfolder {} found: {} for {}".format(i, moddir, dispname))
-            else:
+            elif not steamid is None:
                 logwarning("modfolder {} not found: @{} or {}".format(i, dispname, steamid))
                 moddir = type+"/" + steamid
                 moddirs.append(moddir)
