@@ -271,6 +271,7 @@ if os.path.exists(JSON_CONFIG):
 if not jconfig is None:
     active_jcname=jconfig.get("config-name", None);
     if not active_jcname is None:
+        lognotice("config {} is selected in json file".format(active_jcname))
         active_jc=jconfig.get("configs",{}).get(active_jcname, None)
         if not active_jc is None:
             if "server-config-file" in active_jc:
@@ -289,6 +290,7 @@ if not jconfig is None:
                 NEW_SRVMOD_LIST=active_jc["servermods"]
             if "mods" in active_js:
                 NEW_MOD_LIST=active_jc["mods"]
+                logwarning("NEW_MOD_LIST: {}".format(NEW_MOD_LIST))
             elif "mod-config-file" in active_jc:
                 lognotice("overwrite MODS_PRESET with {}".format(active_jc["mod-config-file"]))
                 os.environ["MODS_PRESET"] = active_jc["mod-config-file"]
@@ -321,7 +323,8 @@ if not jconfig is None:
                     if len(os.environ["ARMA_CDLC"]) > 0:
                         os.environ["ARMA_CDLC"]+=";"
                     os.environ["ARMA_CDLC"]+="spe"
-                    
+        else:
+            logerror("no config entry with key {} found in json file".format(active_jcname))
                         
 
 
