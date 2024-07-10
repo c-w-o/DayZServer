@@ -28,8 +28,8 @@ PARAM_FILE = FOLDER_CONFIG+os.sep+os.environ["PARAM_CONFIG"]
 PRESET_FILE=FOLDER_CONFIG+os.sep+os.environ["MODS_PRESET"]
 JSON_CONFIG = FOLDER_CONFIG+os.sep+"server.json"
 
-NEW_MOD_LIST=[]
-NEW_SRVMOD_LIST=[]
+NEW_MOD_LIST=None
+NEW_SRVMOD_LIST=None
 WORK_MODS="mods"
 WORK_SMODS="servermods"
 
@@ -75,13 +75,13 @@ def get_folder_size(start_path = '.'):
 
     return total_size
     
-def get_mods_from_dir(d):
+def get_mods_from_dir(d, type="mods"):
     mods = []
 
     # Find mod folders
     for m in os.listdir(d):
         moddir = os.path.join(d, m)
-        moddir="mods/"+m
+        moddir=type+"/"+m
         #logdebug("mods: {}".format(moddir))
         mods.append(moddir)
 
@@ -113,7 +113,7 @@ def fix_folder_characters(path):
             os.rename(subdir + os.sep + dir, subdir + os.sep + dir.lower())
             fix_folder_characters(subdir + os.sep + dir.lower())
             
-def steam_download(mods):
+def steam_download(mods, type="mods"):
     steamcmd = ["/steamcmd/steamcmd.sh"]
     steamcmd.extend(["+force_install_dir", FOLDER_MODS])
     steamcmd.extend(["+login", os.environ["STEAM_USER"], os.environ["STEAM_PASSWORD"]])
@@ -124,48 +124,59 @@ def steam_download(mods):
     subprocess.call(steamcmd)
     workshop_dir=FOLDER_MODS+os.sep+"steamapps/workshop/content/107410"
     for m in os.listdir(workshop_dir):
-        share_dir=COMMON_SHARE_ARMA_ROOT+os.sep+"mods"+os.sep+m
-        shutil.move(os.path.join(workshop_dir, m), share_dir)
-        fix_folder_characters(share_dir)
-        link_it(share_dir, FOLDER_MODS+os.sep+m)
-        copy_key(FOLDER_MODS+os.sep+m, FOLDER_KEYS)
+        if type=="mods":
+            share_dir=COMMON_SHARE_ARMA_ROOT+os.sep+"mods"+os.sep+m
+            shutil.move(os.path.join(workshop_dir, m), share_dir)
+            fix_folder_characters(share_dir)
+            link_it(share_dir, FOLDER_MODS+os.sep+m)
+            copy_key(FOLDER_MODS+os.sep+m, FOLDER_KEYS)
+        elif type=="servermods":
+            share_dir=THIS_SHARE_ARMA_ROOT+os.sep+"servermods"+os.sep+m
+            shutil.move(os.path.join(workshop_dir, m), share_dir)
+            fix_folder_characters(share_dir)
+            link_it(share_dir, FOLDER_SERVERMODS+os.sep+m)
+            copy_key(FOLDER_SERVERMODS+os.sep+m, FOLDER_KEYS)
 
 
 
-def filter_preset_mods(preset_file, local_mods):
+def filter_preset_mods(local_mods, preset_file=None, cfg_list=None, type="mods"):
     mods = []
     mis = []
     presmods=[]
     moddirs = []
-    with open(preset_file) as f:
-        html = f.read()
-        lognotice("modfolder - config size {}".format(len(html)))
-        regex=r"<tr[\s\S]*?DisplayName\">(.*?)<\/td>[\s\S]*?filedetails\/\?id=(\d+)[\s\S]*?<\/tr>"
-
-        matches = re.finditer(regex, html, re.MULTILINE)
+    if not preset_file is None:
+        with open(preset_file) as f:
+            html = f.read()
+            lognotice("modfolder - config size {}".format(len(html)))
+            regex=r"<tr[\s\S]*?DisplayName\">(.*?)<\/td>[\s\S]*?filedetails\/\?id=(\d+)[\s\S]*?<\/tr>"
+    
+            matches = re.finditer(regex, html, re.MULTILINE)
+            
+            cfg_list=[]
+            for _, match in enumerate(matches, start=1):
+                dispname=match.group(1).replace(":","-").rstrip(".,")
+                cfg_list.append([dispname, match.group(2)])
+                
+    if not cfg_list is None:
         i=0
-        logmods=[]
-        for _, match in enumerate(matches, start=1):
-            dispname=match.group(1).replace(":","-").rstrip(".,")
-            #for mod in local_mods:
-                #logdebug("mod: {} - {}".format(mod, dispname))
-            #    if os.path.basename(os.path.normpath(mod))=="@"+dispname:
-            #        moddirs.append(mod)
-            logmods.append( [ dispname, match.group(2)])
-            if "mods/@" + dispname in local_mods: 
-                moddir = "mods/@" + dispname
+        for moditem in cfg_list:
+            dispname = moditem[0]
+            steamid = moditem[1]    
+                
+            if type+"/@" + dispname in local_mods: 
+                moddir = type+"/@" + dispname
                 s=get_folder_size(ARMA_ROOT+os.sep+moddir)
                 moddirs.append(moddir)
                 lognotice("modfolder {} found : {} ({})".format(i, moddir, float(s)/1048576))
-            elif "mods/" + match.group(2) in local_mods: 
-                moddir = "mods/" + match.group(2)
+            elif "mods/" + steamid in local_mods: 
+                moddir = type+"/" + steamid
                 moddirs.append(moddir)
                 lognotice("modfolder {} found: {} for {}".format(i, moddir, dispname))
             else:
-                logwarning("modfolder {} not found: @{} or {}".format(i, dispname, match.group(2)))
-                moddir = "mods/" + match.group(2)
+                logwarning("modfolder {} not found: @{} or {}".format(i, dispname, steamid))
+                moddir = type+"/" + steamid
                 moddirs.append(moddir)
-                mis.append(match.group(2))
+                mis.append(steamid)
             i+=1
             
         if len(mis) > 0:
@@ -273,6 +284,8 @@ if not jconfig is None:
                 lognotice("overwrite BASIC_CONFIG with {}".format(active_jc["server-base-file"]))
                 os.environ["BASIC_CONFIG"] = active_jc["server-base-file"]
                 SERVER_BASE = FOLDER_CONFIG+os.sep+os.environ["BASIC_CONFIG"]
+            if "servermods" in active_js:
+                NEW_SRVMOD_LIST=active_jc["servermods"]
             if "mods" in active_js:
                 NEW_MOD_LIST=active_jc["mods"]
             elif "mod-config-file" in active_jc:
@@ -340,8 +353,11 @@ server_mods=[]
 if os.path.exists(ARMA_ROOT+os.sep+"mods"):
     local_mods.extend(get_mods_from_dir(FOLDER_MODS))
 
-if os.environ["MODS_PRESET"] != "":
-    preset_mods.extend(filter_preset_mods(PRESET_FILE, local_mods))
+if not NEW_MOD_LIST is None:
+    preset_mods.extend(filter_preset_mods(local_mods, cfg_list=NEW_MOD_LIST))
+    mods.extend(preset_mods)
+elif os.environ["MODS_PRESET"] != "":
+    preset_mods.extend(filter_preset_mods(local_mods, preset_file=PRESET_FILE))
     mods.extend(preset_mods)
 
 mods_size=0
@@ -350,7 +366,9 @@ for mod in mods:
 
 lognotice("Estimated size of mods: {}".format(mods_size))
 
-server_mods=get_mods_from_dir(FOLDER_SERVERMODS)
+server_mods=get_mods_from_dir(FOLDER_SERVERMODS, type="servermods")
+if not NEW_SRVMOD_LIST is None:
+    server_mods=filter_preset_mods(server_mods, cfg_list=NEW_SRVMOD_LIST, type="servermods")
 
 launch = "{} -filePatching -limitFPS={} -world={} {} {}".format(
     os.environ["ARMA_BINARY"],
