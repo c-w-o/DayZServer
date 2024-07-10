@@ -109,7 +109,7 @@ def fix_folder_characters(path):
         for dir in dirs:
             lognotice("to lower DIR: {} -> {}".format(subdir + os.sep + dir, subdir + os.sep + dir.lower()))
             os.rename(subdir + os.sep + dir, subdir + os.sep + dir.lower())
-            lower_dir(subdir + os.sep + dir.lower())
+            fix_folder_characters(subdir + os.sep + dir.lower())
             
 def steam_download(mods):
     steamcmd = ["/steamcmd/steamcmd.sh"]
