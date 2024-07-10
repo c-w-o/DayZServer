@@ -93,7 +93,24 @@ def copy_key(moddir, keyfolder):
                 shutil.copy2(key, keyfolder)
     else:
         logwarning("Missing keys: {}".format(moddir))
+        
+def fix_folder_characters(path):
+    for subdir, dirs, files in os.walk(path):
+        for file in files:
+            if file.lower()!=file and (file.endswith(".pbo") or file.endswith(".paa") or file.endswith(".sqf")):
+                lognotice("to lower FILE: ", subdir + os.sep + file)
+                os.rename(subdir + os.sep + file, subdir + os.sep + file.lower())
 
+                for sfile in files:
+                    if sfile.startswith(file) and sfile.lower() != sfile:
+                        lognotice("to lower FILE_: {} -> {}".format(subdir + os.sep + sfile, sfile.lower()))
+                        os.rename(subdir + os.sep + sfile, subdir + os.sep + sfile.lower())
+                        
+        for dir in dirs:
+            lognotice("to lower DIR: {} -> {}".format(subdir + os.sep + dir, subdir + os.sep + dir.lower()))
+            os.rename(subdir + os.sep + dir, subdir + os.sep + dir.lower())
+            lower_dir(subdir + os.sep + dir.lower())
+            
 def steam_download(mods):
     steamcmd = ["/steamcmd/steamcmd.sh"]
     steamcmd.extend(["+force_install_dir", FOLDER_MODS])
@@ -107,9 +124,12 @@ def steam_download(mods):
     for m in os.listdir(workshop_dir):
         share_dir=COMMON_SHARE_ARMA_ROOT+os.sep+"mods"+os.sep+m
         shutil.move(os.path.join(workshop_dir, m), share_dir)
+        fix_folder_characters(share_dir)
         link_it(share_dir, FOLDER_MODS+os.sep+m)
         copy_key(FOLDER_MODS+os.sep+m, FOLDER_KEYS)
-    
+
+
+
 def filter_preset_mods(preset_file, local_mods):
     mods = []
     mis = []
@@ -195,26 +215,31 @@ if os.path.exists(THIS_SHARE_ARMA_ROOT+"/maps"):
 if os.path.exists(COMMON_SHARE_ARMA_ROOT+"/maps"):
     for item in os.listdir(COMMON_SHARE_ARMA_ROOT+"/maps"):
         src=os.path.join(COMMON_SHARE_ARMA_ROOT+"/maps", item)
+        fix_folder_characters(src)
         link_it(src, FOLDER_MODS+os.sep+item)
         copy_key(FOLDER_MODS+os.sep+item, FOLDER_KEYS)
         
 for item in os.listdir(THIS_SHARE_ARMA_ROOT+"/mods"):
     src=os.path.join(THIS_SHARE_ARMA_ROOT+"/mods", item)
+    fix_folder_characters(src)
     link_it(src, FOLDER_MODS+os.sep+item)
     copy_key(FOLDER_MODS+os.sep+item, FOLDER_KEYS)
 
 for item in os.listdir(COMMON_SHARE_ARMA_ROOT+"/mods"):
     src=os.path.join(COMMON_SHARE_ARMA_ROOT+"/mods", item)
+    fix_folder_characters(src)
     link_it(src, FOLDER_MODS+os.sep+item)
     copy_key(FOLDER_MODS+os.sep+item, FOLDER_KEYS)
     
 for item in os.listdir(COMMON_SHARE_ARMA_ROOT+"/dlcs"):
     src=os.path.join(COMMON_SHARE_ARMA_ROOT+"/dlcs", item)
+    fix_folder_characters(src)
     link_it(src, ARMA_ROOT+os.sep+item)
     copy_key(ARMA_ROOT+os.sep+item, FOLDER_KEYS)
     
 for item in os.listdir(THIS_SHARE_ARMA_ROOT+"/servermods"):
     src=os.path.join(THIS_SHARE_ARMA_ROOT+"/servermods", item)
+    fix_folder_characters(src)
     link_it(src, FOLDER_SERVERMODS+os.sep+item)
     copy_key(FOLDER_SERVERMODS+os.sep+item, FOLDER_KEYS)
 
