@@ -109,8 +109,9 @@ def fix_folder_characters(path):
                         os.rename(subdir + os.sep + sfile, subdir + os.sep + sfile.lower())
                         
         for dir in dirs:
-            lognotice("to lower DIR: {} -> {}".format(subdir + os.sep + dir, subdir + os.sep + dir.lower()))
-            os.rename(subdir + os.sep + dir, subdir + os.sep + dir.lower())
+            if dir!=dir.lower():
+                lognotice("to lower DIR: {} -> {}".format(subdir + os.sep + dir, subdir + os.sep + dir.lower()))
+                os.rename(subdir + os.sep + dir, subdir + os.sep + dir.lower())
             fix_folder_characters(subdir + os.sep + dir.lower())
             
 def steam_download(mods, type="mods"):
