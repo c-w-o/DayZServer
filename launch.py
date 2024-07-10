@@ -115,15 +115,17 @@ def fix_folder_characters(path):
             fix_folder_characters(subdir + os.sep + dir.lower())
             
 def steam_download(mods, type="mods"):
+    if len(mods) == 0:
+        return
     steamcmd = ["/steamcmd/steamcmd.sh"]
-    steamcmd.extend(["+force_install_dir", FOLDER_MODS])
+    steamcmd.extend(["+force_install_dir", "/tmp"])
     steamcmd.extend(["+login", os.environ["STEAM_USER"], os.environ["STEAM_PASSWORD"]])
     for id in mods:
         steamcmd.extend(["+workshop_download_item", "107410", id])
     steamcmd.extend(["+quit"])
     lognotice("modfolder - downloading: {}".format(steamcmd));
     subprocess.call(steamcmd)
-    workshop_dir=FOLDER_MODS+os.sep+"steamapps/workshop/content/107410"
+    workshop_dir="/tmp"+os.sep+"steamapps/workshop/content/107410"
     for m in os.listdir(workshop_dir):
         if type=="mods":
             share_dir=COMMON_SHARE_ARMA_ROOT+os.sep+"mods"+os.sep+m
