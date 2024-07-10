@@ -169,7 +169,7 @@ def filter_preset_mods(preset_file, local_mods):
             
         if len(mis) > 0:
             steam_download(mis)
-        pprint(logmods)      
+        pprint.pp(logmods)      
     return moddirs
 
 def correct_server_mods(smods):
