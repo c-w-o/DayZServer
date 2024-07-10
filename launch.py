@@ -28,7 +28,8 @@ PARAM_FILE = FOLDER_CONFIG+os.sep+os.environ["PARAM_CONFIG"]
 PRESET_FILE=FOLDER_CONFIG+os.sep+os.environ["MODS_PRESET"]
 JSON_CONFIG = FOLDER_CONFIG+os.sep+"server.json"
 
-
+NEW_MOD_LIST=[]
+NEW_SRVMOD_LIST=[]
 WORK_MODS="mods"
 WORK_SMODS="servermods"
 
@@ -272,7 +273,9 @@ if not jconfig is None:
                 lognotice("overwrite BASIC_CONFIG with {}".format(active_jc["server-base-file"]))
                 os.environ["BASIC_CONFIG"] = active_jc["server-base-file"]
                 SERVER_BASE = FOLDER_CONFIG+os.sep+os.environ["BASIC_CONFIG"]
-            if "mod-config-file" in active_jc:
+            if "mods" in active_js:
+                NEW_MOD_LIST=active_jc["mods"]
+            elif "mod-config-file" in active_jc:
                 lognotice("overwrite MODS_PRESET with {}".format(active_jc["mod-config-file"]))
                 os.environ["MODS_PRESET"] = active_jc["mod-config-file"]
                 PRESET_FILE = FOLDER_CONFIG+os.sep+os.environ["MODS_PRESET"]
