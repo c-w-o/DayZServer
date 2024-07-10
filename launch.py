@@ -156,6 +156,7 @@ def filter_preset_mods(local_mods, preset_file=None, cfg_list=None, type="mods")
             for _, match in enumerate(matches, start=1):
                 dispname=match.group(1).replace(":","-").rstrip(".,")
                 cfg_list.append([dispname, match.group(2)])
+            pprint.pp(cfg_list)   
                 
     if not cfg_list is None:
         i=0
@@ -181,7 +182,7 @@ def filter_preset_mods(local_mods, preset_file=None, cfg_list=None, type="mods")
             
         if len(mis) > 0:
             steam_download(mis)
-        pprint.pp(logmods)      
+           
     return moddirs
 
 def correct_server_mods(smods):
