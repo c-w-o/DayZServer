@@ -210,7 +210,7 @@ if os.path.exists(THIS_SHARE_ARMA_ROOT+"/mpmissions"):
     link_it(THIS_SHARE_ARMA_ROOT+"/mpmissions", ARMA_ROOT+"/mpmissions")
 
 if os.path.exists(THIS_SHARE_ARMA_ROOT+"/maps"):
-    link_it(THIS_SHARE_ARMA_ROOT+"/maps", ARMA_ROOT+"/mods")
+    link_it(THIS_SHARE_ARMA_ROOT+"/maps", ARMA_ROOT+"/maps")
 
 if os.path.exists(COMMON_SHARE_ARMA_ROOT+"/maps"):
     for item in os.listdir(COMMON_SHARE_ARMA_ROOT+"/maps"):
