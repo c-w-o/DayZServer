@@ -196,6 +196,7 @@ def correct_server_mods(smods):
 print("", flush=True)
 print("", flush=True)
 print("HALLO WELT, HALLO DON!", flush=True)
+debug_skip_install=False
 
 lognotice("preparing server...")
 for item in os.listdir(ARMA_ROOT):
@@ -270,6 +271,7 @@ if os.path.exists(JSON_CONFIG):
 
 if not jconfig is None:
     active_jcname=jconfig.get("config-name", None);
+    debug_skip_install=jconfig.get("debug_skip_install", False)
     if not active_jcname is None:
         lognotice("config {} is selected in json file".format(active_jcname))
         active_jc=jconfig.get("configs",{}).get(active_jcname, None)
@@ -332,7 +334,7 @@ link_it(COMMON_SHARE_ARMA_ROOT+"/basic.cfg", ARMA_ROOT+"/basic.cfg")
 
 # add the server itself
 
-if os.environ["SKIP_INSTALL"] in ["", "false"]:
+if os.environ["SKIP_INSTALL"] in ["", "false"] and debug_skip_install==False:
     # Install Arma
 
     steamcmd = ["/steamcmd/steamcmd.sh"]
