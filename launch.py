@@ -189,7 +189,7 @@ def filter_preset_mods(local_mods, preset_file=None, cfg_list=None, type="mods")
         for moditem in cfg_list:
             dispname = moditem[0]
             steamid = moditem[1]
-            link_it(type+"/" + steamid, type+"/@" + dispname)
+            link_it(type+"/" + steamid, "@" + dispname)
             moddirs.append( type+"/@" + dispname)
     return moddirs
 
