@@ -59,8 +59,11 @@ def make_sure_dir(path):
 
 def link_it(what, to):
     if not os.path.exists(to):
-        os.symlink(what, to)
-        lognotice("{} linked to {}".format(what, to))
+        try:
+            os.symlink(what, to)
+            lognotice("{} linked to {}".format(what, to))
+        except:
+            logerror("{} failed to link to {}".format(what, to))
     else:
         logwarning("{} exists, cannot link {}".format(to, what))
 
