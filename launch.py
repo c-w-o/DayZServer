@@ -165,7 +165,7 @@ def filter_preset_mods(local_mods, preset_file=None, cfg_list=None, type="mods")
         i=0
         for moditem in cfg_list:
             dispname = moditem[0]
-            steamid = moditem[1]    
+            steamid = moditem[1]
                 
             if type+"/@" + dispname in local_mods: 
                 moddir = type+"/@" + dispname
@@ -185,7 +185,12 @@ def filter_preset_mods(local_mods, preset_file=None, cfg_list=None, type="mods")
             
         if len(mis) > 0:
             steam_download(mis)
-           
+        moddirs=[]
+        for moditem in cfg_list:
+            dispname = moditem[0]
+            steamid = moditem[1]
+            link_it(type+"/" + steamid, type+"/@" + dispname)
+            moddirs.append( type+"/@" + dispname)
     return moddirs
 
 def correct_server_mods(smods):
