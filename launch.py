@@ -116,7 +116,19 @@ def fix_folder_characters(path):
                 lognotice("to lower DIR: {} -> {}".format(subdir + os.sep + dir, subdir + os.sep + dir.lower()))
                 os.rename(subdir + os.sep + dir, subdir + os.sep + dir.lower())
             fix_folder_characters(subdir + os.sep + dir.lower())
-            
+
+def steam_mod_validate(mods, type="mods"):
+    workshop_dir="/tmp"+os.sep+"steamapps/workshop/content/107410"
+    make_sure_dir(workshop_dir)
+    steamcmd = ["/steamcmd/steamcmd.sh"]
+    steamcmd.extend(["+force_install_dir", "/tmp"])
+    steamcmd.extend(["+login", os.environ["STEAM_USER"], os.environ["STEAM_PASSWORD"]])
+    for id in mods:
+        link_it(ARMA_ROOT+os.sep+type, workshop_dir+os.sep+id)
+        steamcmd.extend(["+workshop_download_item", "107410", id, "validate")
+    steamcmd.extend(["+quit"])
+    subprocess.call(steamcmd)
+        
 def steam_download(mods, type="mods"):
     if len(mods) == 0:
         return
@@ -124,7 +136,7 @@ def steam_download(mods, type="mods"):
     steamcmd.extend(["+force_install_dir", "/tmp"])
     steamcmd.extend(["+login", os.environ["STEAM_USER"], os.environ["STEAM_PASSWORD"]])
     for id in mods:
-        steamcmd.extend(["+workshop_download_item", "107410", id])
+        steamcmd.extend(["+workshop_download_item", "107410", id, "validate])
     steamcmd.extend(["+quit"])
     lognotice("modfolder - downloading: {}".format(steamcmd));
     subprocess.call(steamcmd)
@@ -306,9 +318,11 @@ if not jconfig is None:
                 SERVER_BASE = FOLDER_CONFIG+os.sep+os.environ["BASIC_CONFIG"]
             if "servermods" in active_jc:
                 NEW_SRVMOD_LIST=active_jc["servermods"]
+                 steam_mod_validate(NEW_MOD_LIST, type="servermods)
             if "mods" in active_jc:
                 NEW_MOD_LIST=active_jc["mods"]
                 logwarning("NEW_MOD_LIST: {}".format(NEW_MOD_LIST))
+                steam_mod_validate(NEW_MOD_LIST)
             elif "mod-config-file" in active_jc:
                 lognotice("overwrite MODS_PRESET with {}".format(active_jc["mod-config-file"]))
                 os.environ["MODS_PRESET"] = active_jc["mod-config-file"]
