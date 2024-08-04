@@ -120,14 +120,16 @@ def fix_folder_characters(path):
 def steam_mod_validate(mods, type="mods"):
     workshop_dir="/tmp"+os.sep+"steamapps/workshop/content/107410"
     make_sure_dir(workshop_dir)
-    steamcmd = ["/steamcmd/steamcmd.sh"]
-    steamcmd.extend(["+force_install_dir", "/tmp"])
-    steamcmd.extend(["+login", os.environ["STEAM_USER"], os.environ["STEAM_PASSWORD"]])
-    for dispname,id in mods:
-        link_it(ARMA_ROOT+os.sep+type, workshop_dir+os.sep+id)
-        steamcmd.extend(["+workshop_download_item", "107410", id, "validate"])
-    steamcmd.extend(["+quit"])
-    subprocess.call(steamcmd)
+    for dispname, steamid in mods:
+        steamcmd = ["/steamcmd/steamcmd.sh"]
+        steamcmd.extend(["+force_install_dir", "/tmp"])
+        steamcmd.extend(["+login", os.environ["STEAM_USER"], os.environ["STEAM_PASSWORD"]])
+        link_it(ARMA_ROOT+os.sep+type, workshop_dir+os.sep+steamid)
+        steamcmd.extend(["+workshop_download_item", "107410", steamid, "validate"])
+        steamcmd.extend(["+quit"])
+        lognotice("mod validating: {} ({}): {}".format(dispname, steamid, steamcmd));
+        subprocess.call(steamcmd)
+        
         
 def steam_download(mods, type="mods"):
     if len(mods) == 0:
