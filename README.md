@@ -140,3 +140,10 @@ Set the environment variable `MODS_PRESET` to the HTML preset file exported from
 
 `-e MODS_PRESET="my_mods.html"`
 
+
+## note to self
+'''
+$ git pull
+$ docker build -t ghcr.io/c-w-o/don-arma3:v0.17 -t ghcr.io/c-w-o/don-arma3:latest -f Dockerfile .
+'''
+
