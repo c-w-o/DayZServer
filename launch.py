@@ -268,34 +268,35 @@ if os.path.exists(THIS_SHARE_ARMA_ROOT+"/mpmissions"):
 #        fix_folder_characters(src)
 #        link_it(src, FOLDER_MODS+os.sep+item)
 #        copy_key(FOLDER_MODS+os.sep+item, FOLDER_KEYS)
-lognotice("1 - processing THIS_SHARE_ARMA_ROOT/mods: {}".format(THIS_SHARE_ARMA_ROOT+"/mods"))         
-for item in os.listdir(THIS_SHARE_ARMA_ROOT+"/mods"):
-    src=os.path.join(THIS_SHARE_ARMA_ROOT+"/mods", item)
-    fix_folder_characters(src)
-    link_it(src, FOLDER_MODS+os.sep+item)
-    copy_key(FOLDER_MODS+os.sep+item, FOLDER_KEYS)
-    
-lognotice("2 - processing COMMON_SHARE_ARMA_ROOT/mods: {}".format(COMMON_SHARE_ARMA_ROOT+"/mods"))    
-for item in os.listdir(COMMON_SHARE_ARMA_ROOT+"/mods"):
-    src=os.path.join(COMMON_SHARE_ARMA_ROOT+"/mods", item)
-    fix_folder_characters(src)
-    link_it(src, FOLDER_MODS+os.sep+item)
-    copy_key(FOLDER_MODS+os.sep+item, FOLDER_KEYS)
 
-lognotice("3 - processing COMMON_SHARE_ARMA_ROOT/dlcs: {}".format(COMMON_SHARE_ARMA_ROOT+"/dlcs")) 
-for item in os.listdir(COMMON_SHARE_ARMA_ROOT+"/dlcs"):
-    src=os.path.join(COMMON_SHARE_ARMA_ROOT+"/dlcs", item)
-    fix_folder_characters(src)
-    link_it(src, ARMA_ROOT+os.sep+item)
-    copy_key(ARMA_ROOT+os.sep+item, FOLDER_KEYS)
     
-lognotice("4 - processing THIS_SHARE_ARMA_ROOT/servermods: {}".format(THIS_SHARE_ARMA_ROOT+"/servermods"))     
+lognotice("1 - processing THIS_SHARE_ARMA_ROOT/servermods: {}".format(THIS_SHARE_ARMA_ROOT+"/servermods"))     
 for item in os.listdir(THIS_SHARE_ARMA_ROOT+"/servermods"):
     src=os.path.join(THIS_SHARE_ARMA_ROOT+"/servermods", item)
     fix_folder_characters(src)
     link_it(src, FOLDER_SERVERMODS+os.sep+item)
     copy_key(FOLDER_SERVERMODS+os.sep+item, FOLDER_KEYS)
 
+lognotice("2 - processing THIS_SHARE_ARMA_ROOT/mods: {}".format(THIS_SHARE_ARMA_ROOT+"/mods"))         
+for item in os.listdir(THIS_SHARE_ARMA_ROOT+"/mods"):
+    src=os.path.join(THIS_SHARE_ARMA_ROOT+"/mods", item)
+    fix_folder_characters(src)
+    link_it(src, FOLDER_MODS+os.sep+item)
+    copy_key(FOLDER_MODS+os.sep+item, FOLDER_KEYS)
+    
+lognotice("3 - processing COMMON_SHARE_ARMA_ROOT/mods: {}".format(COMMON_SHARE_ARMA_ROOT+"/mods"))    
+for item in os.listdir(COMMON_SHARE_ARMA_ROOT+"/mods"):
+    src=os.path.join(COMMON_SHARE_ARMA_ROOT+"/mods", item)
+    fix_folder_characters(src)
+    link_it(src, FOLDER_MODS+os.sep+item)
+    copy_key(FOLDER_MODS+os.sep+item, FOLDER_KEYS)
+
+lognotice("4 - processing COMMON_SHARE_ARMA_ROOT/dlcs: {}".format(COMMON_SHARE_ARMA_ROOT+"/dlcs")) 
+for item in os.listdir(COMMON_SHARE_ARMA_ROOT+"/dlcs"):
+    src=os.path.join(COMMON_SHARE_ARMA_ROOT+"/dlcs", item)
+    fix_folder_characters(src)
+    link_it(src, ARMA_ROOT+os.sep+item)
+    copy_key(ARMA_ROOT+os.sep+item, FOLDER_KEYS)
 
 lognotice("\nchecking for json config...")
 
