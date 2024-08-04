@@ -330,10 +330,11 @@ if not jconfig is None:
                 SERVER_BASE = FOLDER_CONFIG+os.sep+os.environ["BASIC_CONFIG"]
             if "servermods" in active_jc:
                 NEW_SRVMOD_LIST=active_jc["servermods"]
+                logwarning("validating servermods: {}".format(NEW_SRVMOD_LIST))
                 steam_mod_validate(NEW_SRVMOD_LIST, type="servermods")
             if "mods" in active_jc:
                 NEW_MOD_LIST=active_jc["mods"]
-                logwarning("NEW_MOD_LIST: {}".format(NEW_MOD_LIST))
+                logwarning("validating mods: {}".format(NEW_MOD_LIST))
                 steam_mod_validate(NEW_MOD_LIST)
             elif "mod-config-file" in active_jc:
                 lognotice("overwrite MODS_PRESET with {}".format(active_jc["mod-config-file"]))
@@ -431,7 +432,7 @@ launch = "{} -filePatching -limitFPS={} -world={} {} {}".format(
     os.environ["ARMA_BINARY"],
     os.environ["ARMA_LIMITFPS"],
     os.environ["ARMA_WORLD"],
-    os.environ["ARMA_PARAMS"],
+    os.environ[""],
     mod_param("mod", mods),
 )
 
