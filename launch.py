@@ -326,7 +326,7 @@ if not jconfig is None:
                 SERVER_BASE = FOLDER_CONFIG+os.sep+os.environ["BASIC_CONFIG"]
             if "servermods" in active_jc:
                 NEW_SRVMOD_LIST=active_jc["servermods"]
-                steam_mod_validate(NEW_MOD_LIST, type="servermods)
+                steam_mod_validate(NEW_MOD_LIST, type="servermods")
             if "mods" in active_jc:
                 NEW_MOD_LIST=active_jc["mods"]
                 logwarning("NEW_MOD_LIST: {}".format(NEW_MOD_LIST))
