@@ -123,6 +123,7 @@ def steam_mod_validate(mods, type="mods"):
     steamcmd = ["/steamcmd/steamcmd.sh"]
     steamcmd.extend(["+force_install_dir", "/tmp"])
     steamcmd.extend(["+login", os.environ["STEAM_USER"], os.environ["STEAM_PASSWORD"]])
+    logwarning("MODCHECK: {}".format(mods))
     for dispname,id in mods:
         link_it(ARMA_ROOT+os.sep+type, workshop_dir+os.sep+id)
         steamcmd.extend(["+workshop_download_item", "107410", id, "validate"])
