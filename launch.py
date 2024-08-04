@@ -132,16 +132,18 @@ def steam_mod_validate(mods, type="mods"):
 def steam_download(mods, type="mods"):
     if len(mods) == 0:
         return
-    steamcmd = ["/steamcmd/steamcmd.sh"]
-    steamcmd.extend(["+force_install_dir", "/tmp"])
-    steamcmd.extend(["+login", os.environ["STEAM_USER"], os.environ["STEAM_PASSWORD"]])
-    for id in mods:
-        steamcmd.extend(["+workshop_download_item", "107410", id, "validate"])
-    steamcmd.extend(["+quit"])
-    lognotice("modfolder - downloading: {}".format(steamcmd));
-    subprocess.call(steamcmd)
+
     workshop_dir="/tmp"+os.sep+"steamapps/workshop/content/107410"
-    for m in os.listdir(workshop_dir):
+    for dispname, steamid in mods:
+        steamcmd = ["/steamcmd/steamcmd.sh"]
+        steamcmd.extend(["+force_install_dir", "/tmp"])
+        steamcmd.extend(["+login", os.environ["STEAM_USER"], os.environ["STEAM_PASSWORD"]])
+        steamcmd.extend(["+workshop_download_item", "107410", steamid, "validate"])
+        steamcmd.extend(["+quit"])
+        lognotice("mod downloading: {} ({}): {}".format(dispname, steamid, steamcmd));
+        subprocess.call(steamcmd)
+        m=steamid
+
         if type=="mods":
             share_dir=COMMON_SHARE_ARMA_ROOT+os.sep+"mods"+os.sep+m
             shutil.move(os.path.join(workshop_dir, m), share_dir)
@@ -154,7 +156,6 @@ def steam_download(mods, type="mods"):
             fix_folder_characters(share_dir)
             link_it(share_dir, FOLDER_SERVERMODS+os.sep+m)
             copy_key(FOLDER_SERVERMODS+os.sep+m, FOLDER_KEYS)
-
 
 
 def filter_preset_mods(local_mods, preset_file=None, cfg_list=None, type="mods"):
@@ -188,18 +189,18 @@ def filter_preset_mods(local_mods, preset_file=None, cfg_list=None, type="mods")
                 s=get_folder_size(ARMA_ROOT+os.sep+moddir)
                 moddirs.append(moddir)
                 if not steamid is None:
-                    check.append(steamid)
+                    check.append(moditem)
                 lognotice("modfolder {} found : {} ({})".format(i, moddir, float(s)/1048576))
             elif not steamid is None and "mods/" + steamid in local_mods: 
                 moddir = type+"/" + steamid
                 moddirs.append(moddir)
                 lognotice("modfolder {} found: {} for {}".format(i, moddir, dispname))
-                check.append(steamid)
+                check.append(moditem)
             elif not steamid is None:
                 logwarning("modfolder {} not found: @{} or {}".format(i, dispname, steamid))
                 moddir = type+"/" + steamid
                 moddirs.append(moddir)
-                mis.append(steamid)
+                mis.append(moditem)
             i+=1
             
         if len(mis) > 0:
@@ -267,25 +268,28 @@ if os.path.exists(THIS_SHARE_ARMA_ROOT+"/mpmissions"):
 #        fix_folder_characters(src)
 #        link_it(src, FOLDER_MODS+os.sep+item)
 #        copy_key(FOLDER_MODS+os.sep+item, FOLDER_KEYS)
-        
+lognotice("1 - processing THIS_SHARE_ARMA_ROOT/mods: {}".format(THIS_SHARE_ARMA_ROOT+"/mods"))         
 for item in os.listdir(THIS_SHARE_ARMA_ROOT+"/mods"):
     src=os.path.join(THIS_SHARE_ARMA_ROOT+"/mods", item)
     fix_folder_characters(src)
     link_it(src, FOLDER_MODS+os.sep+item)
     copy_key(FOLDER_MODS+os.sep+item, FOLDER_KEYS)
-
+    
+lognotice("2 - processing COMMON_SHARE_ARMA_ROOT/mods: {}".format(COMMON_SHARE_ARMA_ROOT+"/mods"))    
 for item in os.listdir(COMMON_SHARE_ARMA_ROOT+"/mods"):
     src=os.path.join(COMMON_SHARE_ARMA_ROOT+"/mods", item)
     fix_folder_characters(src)
     link_it(src, FOLDER_MODS+os.sep+item)
     copy_key(FOLDER_MODS+os.sep+item, FOLDER_KEYS)
-    
+
+lognotice("3 - processing COMMON_SHARE_ARMA_ROOT/dlcs: {}".format(COMMON_SHARE_ARMA_ROOT+"/dlcs")) 
 for item in os.listdir(COMMON_SHARE_ARMA_ROOT+"/dlcs"):
     src=os.path.join(COMMON_SHARE_ARMA_ROOT+"/dlcs", item)
     fix_folder_characters(src)
     link_it(src, ARMA_ROOT+os.sep+item)
     copy_key(ARMA_ROOT+os.sep+item, FOLDER_KEYS)
     
+lognotice("4 - processing THIS_SHARE_ARMA_ROOT/servermods: {}".format(THIS_SHARE_ARMA_ROOT+"/servermods"))     
 for item in os.listdir(THIS_SHARE_ARMA_ROOT+"/servermods"):
     src=os.path.join(THIS_SHARE_ARMA_ROOT+"/servermods", item)
     fix_folder_characters(src)
