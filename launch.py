@@ -123,7 +123,6 @@ def steam_mod_validate(mods, type="mods"):
     steamcmd = ["/steamcmd/steamcmd.sh"]
     steamcmd.extend(["+force_install_dir", "/tmp"])
     steamcmd.extend(["+login", os.environ["STEAM_USER"], os.environ["STEAM_PASSWORD"]])
-    logwarning("MODCHECK: {}".format(mods))
     for dispname,id in mods:
         link_it(ARMA_ROOT+os.sep+type, workshop_dir+os.sep+id)
         steamcmd.extend(["+workshop_download_item", "107410", id, "validate"])
@@ -327,7 +326,7 @@ if not jconfig is None:
                 SERVER_BASE = FOLDER_CONFIG+os.sep+os.environ["BASIC_CONFIG"]
             if "servermods" in active_jc:
                 NEW_SRVMOD_LIST=active_jc["servermods"]
-                steam_mod_validate(NEW_MOD_LIST, type="servermods")
+                steam_mod_validate(NEW_SRVMOD_LIST, type="servermods")
             if "mods" in active_jc:
                 NEW_MOD_LIST=active_jc["mods"]
                 logwarning("NEW_MOD_LIST: {}".format(NEW_MOD_LIST))
