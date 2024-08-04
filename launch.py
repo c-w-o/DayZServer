@@ -136,7 +136,7 @@ def steam_download(mods, type="mods"):
     steamcmd.extend(["+force_install_dir", "/tmp"])
     steamcmd.extend(["+login", os.environ["STEAM_USER"], os.environ["STEAM_PASSWORD"]])
     for id in mods:
-        steamcmd.extend(["+workshop_download_item", "107410", id, "validate])
+        steamcmd.extend(["+workshop_download_item", "107410", id, "validate"])
     steamcmd.extend(["+quit"])
     lognotice("modfolder - downloading: {}".format(steamcmd));
     subprocess.call(steamcmd)
