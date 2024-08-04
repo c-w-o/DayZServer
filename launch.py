@@ -129,6 +129,8 @@ def steam_mod_validate(mods, type="mods"):
         steamcmd.extend(["+quit"])
         lognotice("mod validating: {} ({}): {}".format(dispname, steamid, steamcmd));
         subprocess.call(steamcmd)
+        print("\n", flush=True)
+        
         
         
 def steam_download(mods, type="mods"):
@@ -144,6 +146,7 @@ def steam_download(mods, type="mods"):
         steamcmd.extend(["+quit"])
         lognotice("mod downloading: {} ({}): {}".format(dispname, steamid, steamcmd));
         subprocess.call(steamcmd)
+        print("\n", flush=True)
         m=steamid
 
         if type=="mods":
@@ -333,10 +336,12 @@ if not jconfig is None:
                 SERVER_BASE = FOLDER_CONFIG+os.sep+os.environ["BASIC_CONFIG"]
             if "servermods" in active_jc:
                 NEW_SRVMOD_LIST=active_jc["servermods"]
+                logwarning("")
                 logwarning("validating servermods: {}".format(NEW_SRVMOD_LIST))
                 steam_mod_validate(NEW_SRVMOD_LIST, type="servermods")
             if "mods" in active_jc:
                 NEW_MOD_LIST=active_jc["mods"]
+                logwarning("")
                 logwarning("validating mods: {}".format(NEW_MOD_LIST))
                 steam_mod_validate(NEW_MOD_LIST)
             elif "mod-config-file" in active_jc:
@@ -398,6 +403,7 @@ if os.environ["SKIP_INSTALL"] in ["", "false"] and debug_skip_install==False:
     steamcmd.extend(["validate"])
     steamcmd.extend(["+quit"])
     subprocess.call(steamcmd)
+    print("\n", flush=True)
 
 # Mods
 
@@ -485,6 +491,7 @@ if clients != 0:
         hc_launch = client_launch + ' -name="{}"'.format(hc_name)
         print("LAUNCHING ARMA CLIENT {} WITH".format(i), hc_launch)
         subprocess.Popen(hc_launch, shell=True)
+        print("\n", flush=True)
 
 else:
     launch += ' -config="{}"'.format(CONFIG_FILE)
