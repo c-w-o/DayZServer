@@ -160,6 +160,7 @@ def steam_download(mods, type="mods"):
 def filter_preset_mods(local_mods, preset_file=None, cfg_list=None, type="mods"):
     mods = []
     mis = []
+    check = []
     presmods=[]
     moddirs = []
     if not preset_file is None:
@@ -186,11 +187,14 @@ def filter_preset_mods(local_mods, preset_file=None, cfg_list=None, type="mods")
                 moddir = type+"/@" + dispname
                 s=get_folder_size(ARMA_ROOT+os.sep+moddir)
                 moddirs.append(moddir)
+                if not steamid is None:
+                    check.append(steamid)
                 lognotice("modfolder {} found : {} ({})".format(i, moddir, float(s)/1048576))
             elif not steamid is None and "mods/" + steamid in local_mods: 
                 moddir = type+"/" + steamid
                 moddirs.append(moddir)
                 lognotice("modfolder {} found: {} for {}".format(i, moddir, dispname))
+                check.append(steamid)
             elif not steamid is None:
                 logwarning("modfolder {} not found: @{} or {}".format(i, dispname, steamid))
                 moddir = type+"/" + steamid
@@ -199,7 +203,11 @@ def filter_preset_mods(local_mods, preset_file=None, cfg_list=None, type="mods")
             i+=1
             
         if len(mis) > 0:
+            lognotice("downloading mods: {}".format(mis))
             steam_download(mis)
+        if len(check) > 0:
+            lognotice("check for update of mods: {}".format(mis))
+            steam_download(check)
         moddirs=[]
         for moditem in cfg_list:
             dispname = moditem[0]
