@@ -220,10 +220,10 @@ def steam_download(mods, type="mods", validate=False):
                 lognotice("updated mod update time of {} to {}".format(datecfg, up_dt.strftime("%Y-%m-%d %H:%M:%S")) )
             
         if type=="mods":
-            link_it(share_dir, FOLDER_MODS+os.sep+steamid)
+            link_it(share_dir, FOLDER_MODS+os.sep+steamid, keep_silent=True)
             copy_key(FOLDER_MODS+os.sep+steamid, FOLDER_KEYS)
         elif type=="servermods":
-            link_it(share_dir, FOLDER_SERVERMODS+os.sep+steamid)
+            link_it(share_dir, FOLDER_SERVERMODS+os.sep+steamid, keep_silent=True)
             copy_key(FOLDER_SERVERMODS+os.sep+steamid, FOLDER_KEYS)
             
 
