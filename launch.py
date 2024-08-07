@@ -65,7 +65,7 @@ def make_sure_dir(path):
     else:
         logerror("{} is a file and not a path".format(path))
 
-def link_it(what, to):
+def link_it(what, to, keep_silent=False):
     if not os.path.exists(to):
         try:
             os.symlink(what, to)
@@ -73,7 +73,8 @@ def link_it(what, to):
         except:
             logerror("{} failed to link to {}".format(what, to))
     else:
-        logwarning("{} exists, cannot link {}".format(to, what))
+        if not keep_silent:
+            logwarning("{} exists, cannot link {}".format(to, what))
 
 def get_folder_size(start_path = '.'):
     total_size = 0
