@@ -1,12 +1,17 @@
 import glob
 import json
+import ssl
 import os
 import pprint
 import re
 import shutil
 import subprocess
+import urllib.request
 from string import Template
+from datetime import datetime
 import time
+
+USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36"  # noqa: E501
 
 ARMA_ROOT="/arma3"
 SHARE_ARMA_ROOT="/var/run/share/arma3"
@@ -27,6 +32,7 @@ SERVER_BASE = ARMA_ROOT+os.sep+os.environ["BASIC_CONFIG"]
 PARAM_FILE = FOLDER_CONFIG+os.sep+os.environ["PARAM_CONFIG"]
 PRESET_FILE=FOLDER_CONFIG+os.sep+os.environ["MODS_PRESET"]
 JSON_CONFIG = FOLDER_CONFIG+os.sep+"server.json"
+WORKSHOP_DIR="/tmp"+os.sep+"steamapps/workshop/content/107410"+os.sep
 
 NEW_MOD_LIST=None
 NEW_SRVMOD_LIST=None
@@ -56,6 +62,8 @@ def make_sure_dir(path):
             os.remove(path)
         os.makedirs(path)
         lognotice("{} created".format(path))
+    else:
+        logerror("{} is a file and not a path".format(path))
 
 def link_it(what, to):
     if not os.path.exists(to):
@@ -117,50 +125,95 @@ def fix_folder_characters(path):
                 os.rename(subdir + os.sep + dir, subdir + os.sep + dir.lower())
             fix_folder_characters(subdir + os.sep + dir.lower())
 
-def steam_mod_validate(mods, type="mods"):
-    workshop_dir="/tmp"+os.sep+"steamapps/workshop/content/107410"
-    make_sure_dir(workshop_dir)
-    for dispname, steamid in mods:
-        steamcmd = ["/steamcmd/steamcmd.sh"]
-        steamcmd.extend(["+force_install_dir", "/tmp"])
-        steamcmd.extend(["+login", os.environ["STEAM_USER"], os.environ["STEAM_PASSWORD"]])
-        link_it(ARMA_ROOT+os.sep+type, workshop_dir+os.sep+steamid)
-        steamcmd.extend(["+workshop_download_item", "107410", steamid, "validate"])
-        steamcmd.extend(["+quit"])
-        lognotice("mod validating: {} ({}): {}".format(dispname, steamid, steamcmd));
-        subprocess.call(steamcmd)
-        print("\n", flush=True)
+def get_last_update(steamid):
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    url_string="https://steamcommunity.com/sharedfiles/filedetails/"+str(steamid)
+    
+    req = urllib.request.Request(url_string, headers={"User-Agent": USER_AGENT})
+    remote = urllib.request.urlopen(req)
+    html=remote.read().decode(remote.headers.get_content_charset());
+    lognotice("len: {}".format(len(html)))
+    regex=r"[\s\S]*?<[\s]*div[\s]+class=\"detailsStatRight\"[\s\S]*?>([\s\S]*?)<[\s]*\/div[\s]*>[\s\S]*?<[\s]*div[\s]+class=\"detailsStatRight\"[\s\S]*?>([\s\S]*?)<[\s]*\/div[\s]*>[\s\S]*?<[\s]*div[\s]+class=\"detailsStatRight\"[\s\S]*?>([\s\S]*?)<[\s]*\/div[\s]*>"
+    matches=re.finditer(regex, html, re.MULTILINE )
+    for _,match in enumerate(matches, start=1):
+        #lognotice("MATCH: {} - {} - {}".format(match.group(1), match.group(2), match.group(3)))
+        dt=datetime.now().replace(year=1984)
+        try:
+            dt=datetime.strptime(match.group(3), "%d %b, %Y @ %I:%M%p")
+        except ValueError:
+            dt=datetime.strptime(match.group(3), "%d %b @ %I:%M%p")
+            dt=dt.replace(year=datetime.now().year)
+        lognotice("Mod Time: {}".format(dt))
+        return dt
         
-        
-        
-def steam_download(mods, type="mods"):
+def steam_download(mods, type="mods", validate=False):
     if len(mods) == 0:
         return
-
-    workshop_dir="/tmp"+os.sep+"steamapps/workshop/content/107410"
+    share_dir=""
+    if type=="mods":
+        share_dir=COMMON_SHARE_ARMA_ROOT+os.sep+"mods"+os.sep
+    elif type=="servermods":
+        share_dir=THIS_SHARE_ARMA_ROOT+os.sep+"servermods"+os.sep
+    else:
+        logerror("whoops type={}".format(type))
+        
     for dispname, steamid in mods:
-        steamcmd = ["/steamcmd/steamcmd.sh"]
-        steamcmd.extend(["+force_install_dir", "/tmp"])
-        steamcmd.extend(["+login", os.environ["STEAM_USER"], os.environ["STEAM_PASSWORD"]])
-        steamcmd.extend(["+workshop_download_item", "107410", steamid, "validate"])
-        steamcmd.extend(["+quit"])
-        lognotice("mod downloading: {} ({}): {}".format(dispname, steamid, steamcmd));
-        subprocess.call(steamcmd)
-        print("\n", flush=True)
-        m=steamid
-
+        run_steamcmd=False
+        up_dt=datetime.now().replace(year=1984)
+        datecfg=share_dir+steamid+os.sep+"srvdon_info.cfg"
+        if os.path.exists(share_dir+steamid):
+            if not os.path.exists(datecfg):
+                with open(datecfg, "w") as f:
+                    dt=datetime.now().replace(year=1984)
+                    f.write(dt.strftime("%Y-%m-%d %H:%M:%S"))
+                    logwarning("failed to find last update time, setting default for {} to {}".format(datecfg, dt.strftime("%Y-%m-%d %H:%M:%S")) )
+        
+            if validate:
+                act_dt=datetime.now().replace(year=1984)
+                try:
+                    with open(datecfg, "r") as f:
+                        act_dt=datetime.strptime(f.read(), "%Y-%m-%d %H:%M:%S")
+                except ValueError:
+                    logerror("failed to get update time from {}".format(datecfg))
+                    os.remove(datecfg)
+                    act_dt=datetime.now().replace(year=1984)
+                up_dt=get_last_update(steamid)
+                logwarning("up_dt: {} act_dt: {}".format(up_dt, act_dt))
+                if up_dt is None:
+                    logwarning("mod {} ({}) not found".format(dispname, steamid))
+                elif up_dt > act_dt:
+                    run_steamcmd=True
+                else:
+                    lognotice("mod {} ({}) seems to be up to date".format(dispname, steamid))
+        else:
+            make_sure_dir(share_dir+steamid)
+            run_steamcmd=True
+            logwarning("getting release date of mod {} ({})".format(dispname, steamid))
+            up_dt=get_last_update(steamid)
+            link_it(share_dir+steamid, WORKSHOP_DIR+steamid)
+        
+        if run_steamcmd:
+            steamcmd = ["/steamcmd/steamcmd.sh"]
+            steamcmd.extend(["+force_install_dir", "/tmp"])
+            steamcmd.extend(["+login", os.environ["STEAM_USER"], os.environ["STEAM_PASSWORD"]])
+            steamcmd.extend(["+workshop_download_item", "107410", steamid, "validate"])
+            steamcmd.extend(["+quit"])
+            lognotice("mod downloading: {} ({}): {}".format(dispname, steamid, steamcmd));
+            subprocess.call(steamcmd)
+            with open(datecfg, "w") as f:
+                f.write(up_dt.strftime("%Y-%m-%d %H:%M:%S"))
+                lognotice("updated mod update time of {} to {}".format(datecfg, up_dt.strftime("%Y-%m-%d %H:%M:%S")) )
+            
         if type=="mods":
-            share_dir=COMMON_SHARE_ARMA_ROOT+os.sep+"mods"+os.sep+m
-            shutil.move(os.path.join(workshop_dir, m), share_dir)
-            fix_folder_characters(share_dir)
-            link_it(share_dir, FOLDER_MODS+os.sep+m)
-            copy_key(FOLDER_MODS+os.sep+m, FOLDER_KEYS)
+            link_it(share_dir, FOLDER_MODS+os.sep+steamid)
+            copy_key(FOLDER_MODS+os.sep+steamid, FOLDER_KEYS)
         elif type=="servermods":
-            share_dir=THIS_SHARE_ARMA_ROOT+os.sep+"servermods"+os.sep+m
-            shutil.move(os.path.join(workshop_dir, m), share_dir)
-            fix_folder_characters(share_dir)
-            link_it(share_dir, FOLDER_SERVERMODS+os.sep+m)
-            copy_key(FOLDER_SERVERMODS+os.sep+m, FOLDER_KEYS)
+            link_it(share_dir, FOLDER_SERVERMODS+os.sep+steamid)
+            copy_key(FOLDER_SERVERMODS+os.sep+steamid, FOLDER_KEYS)
+            
+
 
 
 def filter_preset_mods(local_mods, preset_file=None, cfg_list=None, type="mods"):
@@ -210,14 +263,12 @@ def filter_preset_mods(local_mods, preset_file=None, cfg_list=None, type="mods")
             
         if len(mis) > 0:
             lognotice("downloading mods: {}".format(mis))
-            steam_download(mis)
+            steam_download(mis, type=type)
         if len(check) > 0:
-            lognotice("check for update of mods: {}".format(mis))
-            steam_download(check)
+            lognotice("check for update of mods: {} ({})".format(check, len(check)))
+            steam_download(check, type=type, validate=True)
         moddirs=[]
-        for moditem in cfg_list:
-            dispname = moditem[0]
-            steamid = moditem[1]
+        for dispname,steamid in cfg_list:
             link_it(steamid, type+"/@" + dispname)
             moddirs.append( type+"/@" + dispname)
     return moddirs
@@ -234,7 +285,7 @@ def correct_server_mods(smods):
 print("\n\nHALLO WELT, HALLO DON!\n", flush=True)
 debug_skip_install=False
 
-
+    
 lognotice("\npreparing server...")
 
 for item in os.listdir(ARMA_ROOT):
@@ -248,12 +299,15 @@ for item in os.listdir(ARMA_ROOT):
         shutil.rmtree(item)
     else:
         logwarning("unknown {}".format(item))
-
+if os.path.exists(WORKSHOP_DIR):
+    logdebug("rm {}".format(WORKSHOP_DIR))
+    shutil.rmtree(WORKSHOP_DIR)
 # prepare folders from outside and inside
 
 make_sure_dir(FOLDER_KEYS)
 make_sure_dir(FOLDER_MODS)
 make_sure_dir(FOLDER_SERVERMODS)
+make_sure_dir(WORKSHOP_DIR)
 #make_sure_dir(FOLDER_ADDONS)
 #make_sure_dir(FOLDER_MPISSIONS)
  
@@ -305,7 +359,6 @@ for item in os.listdir(COMMON_SHARE_ARMA_ROOT+"/dlcs"):
 
 lognotice("\nchecking for json config...")
 
-
 jconfig=None
 if os.path.exists(JSON_CONFIG):
     lognotice("found server.json override file")
@@ -336,14 +389,10 @@ if not jconfig is None:
                 SERVER_BASE = FOLDER_CONFIG+os.sep+os.environ["BASIC_CONFIG"]
             if "servermods" in active_jc:
                 NEW_SRVMOD_LIST=active_jc["servermods"]
-                logwarning("")
                 logwarning("validating servermods: {}".format(NEW_SRVMOD_LIST))
-                steam_mod_validate(NEW_SRVMOD_LIST, type="servermods")
             if "mods" in active_jc:
                 NEW_MOD_LIST=active_jc["mods"]
-                logwarning("")
                 logwarning("validating mods: {}".format(NEW_MOD_LIST))
-                steam_mod_validate(NEW_MOD_LIST)
             elif "mod-config-file" in active_jc:
                 lognotice("overwrite MODS_PRESET with {}".format(active_jc["mod-config-file"]))
                 os.environ["MODS_PRESET"] = active_jc["mod-config-file"]
@@ -387,8 +436,7 @@ link_it(COMMON_SHARE_ARMA_ROOT+"/basic.cfg", ARMA_ROOT+"/basic.cfg")
 
 
 lognotice("\ninstall / update arma server binary...")
-
-
+    
 if os.environ["SKIP_INSTALL"] in ["", "false"] and debug_skip_install==False:
     # Install Arma
 
@@ -403,7 +451,6 @@ if os.environ["SKIP_INSTALL"] in ["", "false"] and debug_skip_install==False:
     steamcmd.extend(["validate"])
     steamcmd.extend(["+quit"])
     subprocess.call(steamcmd)
-    print("\n", flush=True)
 
 # Mods
 
@@ -441,8 +488,8 @@ launch = "{} -filePatching -limitFPS={} -world={} {} {}".format(
     os.environ["ARMA_BINARY"],
     os.environ["ARMA_LIMITFPS"],
     os.environ["ARMA_WORLD"],
-    os.environ[""],
-    mod_param("mod", mods),
+    os.environ["ARMA_PARAMS"],
+    mod_param("mod", mods)
 )
 
 if os.environ["ARMA_CDLC"] != "":
@@ -491,7 +538,6 @@ if clients != 0:
         hc_launch = client_launch + ' -name="{}"'.format(hc_name)
         print("LAUNCHING ARMA CLIENT {} WITH".format(i), hc_launch)
         subprocess.Popen(hc_launch, shell=True)
-        print("\n", flush=True)
 
 else:
     launch += ' -config="{}"'.format(CONFIG_FILE)
