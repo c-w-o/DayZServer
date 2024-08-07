@@ -8,7 +8,7 @@ import shutil
 import subprocess
 import urllib.request
 from string import Template
-from datetime import datetime
+from datetime import datetime, timedelta
 import time
 
 USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36"  # noqa: E501
@@ -127,26 +127,33 @@ def fix_folder_characters(path):
             fix_folder_characters(subdir + os.sep + dir.lower())
 
 def get_last_update(steamid):
+    dt_1=datetime.now()
     ctx = ssl.create_default_context()
     ctx.check_hostname = False
     ctx.verify_mode = ssl.CERT_NONE
     url_string="https://steamcommunity.com/sharedfiles/filedetails/"+str(steamid)
-    
+    dt_2=datetime.now()
     req = urllib.request.Request(url_string, headers={"User-Agent": USER_AGENT})
     remote = urllib.request.urlopen(req)
     html=remote.read().decode(remote.headers.get_content_charset());
-    regex=r"[\s\S]*?<[\s]*div[\s]+class=\"detailsStatRight\"[\s\S]*?>([\s\S]*?)<[\s]*\/div[\s]*>"
+    #html=html.split("detailsStatsContainerRight",1)[1].split("detailsStatsContainerRight",1)[0]
+    dt_3=datetime.now()
+    
+    regex=r"\"detailsStatRight\".*>(.*)<.*\/div.*>"
     matches=re.findall(regex, html, re.MULTILINE)
 
     dt=datetime.now().replace(year=1984)
-    
+    dt_4=datetime.now()
     if len(matches)==2:
+        
         try:
             dt=datetime.strptime(matches[1], "%d %b, %Y @ %I:%M%p")
         except ValueError:
             dt=datetime.strptime(matches[1], "%d %b @ %I:%M%p")
             dt=dt.replace(year=datetime.now().year)
         lognotice("mod release time: {}".format(dt))
+        dt_5=datetime.now()
+        lognotice("time: {},{},{},{}".format(dt_2-dt_1, dt_3-dt_2, dt_4-dt_3, dt_5-dt_4 ))
         return dt
     elif len(matches)==3:    
         try:
@@ -155,6 +162,8 @@ def get_last_update(steamid):
             dt=datetime.strptime(matches[2], "%d %b @ %I:%M%p")
             dt=dt.replace(year=datetime.now().year)
         lognotice("mod update time: {}".format(dt))
+        dt_5=datetime.now()
+        lognotice("time: {},{},{},{}".format(dt_2-dt_1, dt_3-dt_2, dt_4-dt_3, dt_5-dt_4 ))
         return dt
         
     logerror("failed to find any release or update date, using fallback-default of {}".format(dt.strftime("%Y-%m-%d %H:%M:%S")))
@@ -171,6 +180,7 @@ def steam_download(mods, type="mods", validate=False):
         share_dir=THIS_SHARE_ARMA_ROOT+os.sep+"servermods"+os.sep
     else:
         logerror("whoops type={}".format(type))
+    
         
     for dispname, steamid in mods:
         run_steamcmd=False
@@ -182,7 +192,6 @@ def steam_download(mods, type="mods", validate=False):
                     dt=datetime.now().replace(year=1984)
                     f.write(dt.strftime("%Y-%m-%d %H:%M:%S"))
                     logwarning("failed to find last update time, setting default for {} to {}".format(datecfg, dt.strftime("%Y-%m-%d %H:%M:%S")) )
-        
             if validate:
                 act_dt=datetime.now().replace(year=1984)
                 try:
@@ -193,7 +202,6 @@ def steam_download(mods, type="mods", validate=False):
                     os.remove(datecfg)
                     act_dt=datetime.now().replace(year=1984)
                 up_dt=get_last_update(steamid)
-                
                 if up_dt is None:
                     logwarning("mod {} ({}) not found".format(dispname, steamid))
                 elif up_dt > act_dt:
