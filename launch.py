@@ -134,19 +134,31 @@ def get_last_update(steamid):
     req = urllib.request.Request(url_string, headers={"User-Agent": USER_AGENT})
     remote = urllib.request.urlopen(req)
     html=remote.read().decode(remote.headers.get_content_charset());
-    lognotice("len: {}".format(len(html)))
-    regex=r"[\s\S]*?<[\s]*div[\s]+class=\"detailsStatRight\"[\s\S]*?>([\s\S]*?)<[\s]*\/div[\s]*>[\s\S]*?<[\s]*div[\s]+class=\"detailsStatRight\"[\s\S]*?>([\s\S]*?)<[\s]*\/div[\s]*>[\s\S]*?<[\s]*div[\s]+class=\"detailsStatRight\"[\s\S]*?>([\s\S]*?)<[\s]*\/div[\s]*>"
-    matches=re.finditer(regex, html, re.MULTILINE )
-    for _,match in enumerate(matches, start=1):
-        #lognotice("MATCH: {} - {} - {}".format(match.group(1), match.group(2), match.group(3)))
-        dt=datetime.now().replace(year=1984)
+    regex=r"[\s\S]*?<[\s]*div[\s]+class=\"detailsStatRight\"[\s\S]*?>([\s\S]*?)<[\s]*\/div[\s]*>"
+    matches=re.findall(regex, html, re.MULTILINE)
+
+    dt=datetime.now().replace(year=1984)
+    
+    if len(matches)==2:
         try:
-            dt=datetime.strptime(match.group(3), "%d %b, %Y @ %I:%M%p")
+            dt=datetime.strptime(matches[1], "%d %b, %Y @ %I:%M%p")
         except ValueError:
-            dt=datetime.strptime(match.group(3), "%d %b @ %I:%M%p")
+            dt=datetime.strptime(matches[1], "%d %b @ %I:%M%p")
             dt=dt.replace(year=datetime.now().year)
-        lognotice("Mod Time: {}".format(dt))
+        lognotice("mod release time: {}".format(dt))
         return dt
+    elif len(matches)==3:    
+        try:
+            dt=datetime.strptime(matches[2], "%d %b, %Y @ %I:%M%p")
+        except ValueError:
+            dt=datetime.strptime(matches[2], "%d %b @ %I:%M%p")
+            dt=dt.replace(year=datetime.now().year)
+        lognotice("mod update time: {}".format(dt))
+        return dt
+        
+    logerror("failed to find any release or update date, using fallback-default of {}".format(dt.strftime("%Y-%m-%d %H:%M:%S")))
+    return dt
+
         
 def steam_download(mods, type="mods", validate=False):
     if len(mods) == 0:
@@ -180,7 +192,7 @@ def steam_download(mods, type="mods", validate=False):
                     os.remove(datecfg)
                     act_dt=datetime.now().replace(year=1984)
                 up_dt=get_last_update(steamid)
-                logwarning("up_dt: {} act_dt: {}".format(up_dt, act_dt))
+                
                 if up_dt is None:
                     logwarning("mod {} ({}) not found".format(dispname, steamid))
                 elif up_dt > act_dt:
