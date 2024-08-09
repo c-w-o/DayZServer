@@ -563,7 +563,10 @@ if clients != 0:
 else:
     launch += ' -config="{}"'.format(CONFIG_FILE)
 
-
+#lognotice("sleeping!")
+#while(True):
+#    time.sleep(1)
+    
 lognotice("\nstarting arma dedicated server...")
 
 
