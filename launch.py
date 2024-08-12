@@ -14,7 +14,7 @@ import time
 USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36"  # noqa: E501
 
 ARMA_ROOT="/arma3"
-SHARE_ARMA_ROOT="/var/run/share/arma3"
+#SHARE_ARMA_ROOT="/var/run/share/arma3"
 COMMON_SHARE_ARMA_ROOT="/var/run/share/arma3/server-common"
 THIS_SHARE_ARMA_ROOT="/var/run/share/arma3/this-server"
 STEAM_ROOT="/steamcmd"
@@ -34,19 +34,29 @@ PRESET_FILE=FOLDER_CONFIG+os.sep+os.environ["MODS_PRESET"]
 JSON_CONFIG = FOLDER_CONFIG+os.sep+"server.json"
 WORKSHOP_DIR="/tmp"+os.sep+"steamapps/workshop/content/107410"+os.sep
 
-NEW_MOD_LIST=None
-NEW_SRVMOD_LIST=None
+# 1. /arma3/* ordner von "außen" löschen
+# 2. /tmp/workshop/.../mods/xxx Ornder von this-server und common-server hierher linken
+#                                      fehlende order in common-server anlegen und linken
+# 
+
+NEW_MOD_LIST=[]
+NEW_SRVMOD_LIST=[]
+NEW_MAPS_LIST=[]
 WORK_MODS="mods"
 WORK_SMODS="servermods"
 
-def logdebug(what):
-    print("logdebug  : {}".format(what), flush=True)
-def lognotice(what):
-    print("NOTICE : {}".format(what), flush=True)
-def logwarning(what):
-    print("WARNING: {}".format(what), flush=True)
-def logerror(what):
-    print("ERROR  : {}".format(what), flush=True)
+def logdebug(what, silent=False):
+    if not silent:
+        print("logdebug  : {}".format(what), flush=True)
+def lognotice(what, silent=False):
+    if not silent:
+        print("NOTICE : {}".format(what), flush=True)
+def logwarning(what, silent=False):
+    if not silent:
+        print("WARNING: {}".format(what), flush=True)
+def logerror(what, silent=False):
+    if not silent:
+        print("ERROR  : {}".format(what), flush=True)
 
 def mod_param(name, mods):
     return ' -{}="{}" '.format(name, ";".join(mods))
@@ -55,58 +65,34 @@ def mod_param(name, mods):
 def env_defined(key):
     return key in os.environ and len(os.environ[key]) > 0
 
-def make_sure_dir(path):
+def make_sure_dir(path, silent=False):
     if not os.path.isdir(path):
         if os.path.exists(path):
             logwarning("{} is not a dir, removing".format(path))
             os.remove(path)
         os.makedirs(path)
-        lognotice("{} created".format(path))
+        lognotice("{} created".format(path), silent)
     else:
         logerror("{} is a file and not a path".format(path))
 
-def link_it(what, to, keep_silent=False):
+def link_it(what, to, silent=False):
     if not os.path.exists(to):
         try:
             os.symlink(what, to)
-            lognotice("{} linked to {}".format(what, to))
+            lognotice("{} linked to {}".format(what, to), silent=silent)
         except:
             logerror("{} failed to link to {}".format(what, to))
     else:
-        if not keep_silent:
-            logwarning("{} exists, cannot link {}".format(to, what))
+        logwarning("{} exists, cannot link {}".format(to, what))
 
-def get_folder_size(start_path = '.'):
-    total_size = 0
-    for dirpath, dirnames, filenames in os.walk(start_path):
-        for f in filenames:
-            fp = os.path.join(dirpath, f)
-            # skip if it is symbolic link
-            if not os.path.islink(fp):
-                total_size += os.path.getsize(fp)
-
-    return total_size
-    
-def get_mods_from_dir(d, type="mods"):
-    mods = []
-
-    # Find mod folders
-    for m in os.listdir(d):
-        moddir = os.path.join(d, m)
-        moddir=type+"/"+m
-        #logdebug("mods: {}".format(moddir))
-        mods.append(moddir)
-
-    return mods
-
-def copy_key(moddir, keyfolder):
+def copy_key(moddir, keyfolder, dispname=""):
     keys = glob.glob(os.path.join(moddir, "**/*.bikey"))
     if len(keys) > 0:
         for key in keys:
             if not os.path.isdir(key):
                 shutil.copy2(key, keyfolder)
     else:
-        logwarning("Missing keys: {}".format(moddir))
+        logwarning("Missing keys: {} ({})".format(moddir, dispname))
         
 def fix_folder_characters(path):
     for subdir, dirs, files in os.walk(path):
@@ -151,9 +137,9 @@ def get_last_update(steamid):
         except ValueError:
             dt=datetime.strptime(matches[1], "%d %b @ %I:%M%p")
             dt=dt.replace(year=datetime.now().year)
-        lognotice("mod release time: {}".format(dt))
-        dt_5=datetime.now()
-        lognotice("time: {},{},{},{}".format(dt_2-dt_1, dt_3-dt_2, dt_4-dt_3, dt_5-dt_4 ))
+        #lognotice("mod release time: {}".format(dt))
+        #dt_5=datetime.now()
+        #lognotice("time: {},{},{},{}".format(dt_2-dt_1, dt_3-dt_2, dt_4-dt_3, dt_5-dt_4 ))
         return dt
     elif len(matches)==3:    
         try:
@@ -161,9 +147,9 @@ def get_last_update(steamid):
         except ValueError:
             dt=datetime.strptime(matches[2], "%d %b @ %I:%M%p")
             dt=dt.replace(year=datetime.now().year)
-        lognotice("mod update time: {}".format(dt))
-        dt_5=datetime.now()
-        lognotice("time: {},{},{},{}".format(dt_2-dt_1, dt_3-dt_2, dt_4-dt_3, dt_5-dt_4 ))
+        #lognotice("mod update time: {}".format(dt))
+        #dt_5=datetime.now()
+        #lognotice("time: {},{},{},{}".format(dt_2-dt_1, dt_3-dt_2, dt_4-dt_3, dt_5-dt_4 ))
         return dt
         
     logerror("failed to find any release or update date, using fallback-default of {}".format(dt.strftime("%Y-%m-%d %H:%M:%S")))
@@ -228,79 +214,274 @@ def steam_download(mods, type="mods", validate=False):
                 lognotice("updated mod update time of {} to {}".format(datecfg, up_dt.strftime("%Y-%m-%d %H:%M:%S")) )
             
         if type=="mods":
-            link_it(share_dir, FOLDER_MODS+os.sep+steamid, keep_silent=True)
+            link_it(share_dir, FOLDER_MODS+os.sep+steamid, silent=True)
             copy_key(FOLDER_MODS+os.sep+steamid, FOLDER_KEYS)
         elif type=="servermods":
-            link_it(share_dir, FOLDER_SERVERMODS+os.sep+steamid, keep_silent=True)
+            link_it(share_dir, FOLDER_SERVERMODS+os.sep+steamid, silent=True)
             copy_key(FOLDER_SERVERMODS+os.sep+steamid, FOLDER_KEYS)
             
 
+def startup_folder_clean_prepare():
+    to_unlink=[]
+    to_rmtree=[]
+    to_ignore=[]
 
+    for item in os.listdir(ARMA_ROOT):
+        if item == "steamapps" or item == "battleye":
+            continue
+        if os.path.islink(item):
+            to_unlink.append(item)
+        elif os.path.isdir(item):
+            to_rmtree.append(item)
+        else:
+            to_ignore.append(item)
+    if os.path.exists(WORKSHOP_DIR):
+        to_rmtree.append(WORKSHOP_DIR)
 
-def filter_preset_mods(local_mods, preset_file=None, cfg_list=None, type="mods"):
-    mods = []
-    mis = []
-    check = []
-    presmods=[]
-    moddirs = []
-    if not preset_file is None:
-        with open(preset_file) as f:
-            html = f.read()
-            lognotice("modfolder - config size {}".format(len(html)))
-            regex=r"<tr[\s\S]*?DisplayName\">(.*?)<\/td>[\s\S]*?filedetails\/\?id=(\d+)[\s\S]*?<\/tr>"
+    logdebug("unlinking {}".format(to_unlink))
+    for item in to_unlink:
+        os.unlink(item)
+    logdebug("removing {}".format(to_rmtree))
+    for item in to_rmtree:
+        shutil.rmtree(item)
+
+    logwarning("ignoring {}".format(to_ignore))
+
+    to_make=[]
+    to_link=[]
+    to_make.append(FOLDER_KEYS)
+    to_make.append(FOLDER_MODS)
+    to_make.append(FOLDER_SERVERMODS)
+    to_make.append(WORKSHOP_DIR)
+
+    to_link.append([THIS_SHARE_ARMA_ROOT+"/config", ARMA_ROOT+"/config"])
+    to_link.append([THIS_SHARE_ARMA_ROOT+"/userconfig", ARMA_ROOT+"/userconfig"])
+    to_link.append([THIS_SHARE_ARMA_ROOT+"/logs", ARMA_ROOT+"/logs"])
+    to_link.append([COMMON_SHARE_ARMA_ROOT+"/basic.cfg", ARMA_ROOT+"/basic.cfg"])
+    if os.path.exists(THIS_SHARE_ARMA_ROOT+"/mpmissions"):
+        to_link.append([THIS_SHARE_ARMA_ROOT+"/mpmissions", ARMA_ROOT+"/mpmissions"])
     
-            matches = re.finditer(regex, html, re.MULTILINE)
-            
-            cfg_list=[]
-            for _, match in enumerate(matches, start=1):
-                dispname=match.group(1).replace(":","-").rstrip(".,")
-                cfg_list.append([dispname, match.group(2)])
-            pprint.pp(cfg_list)   
-                
-    if not cfg_list is None:
-        i=0
-        for moditem in cfg_list:
-            dispname = moditem[0]
-            steamid = moditem[1]
-                
-            if type+"/@" + dispname in local_mods: 
-                moddir = type+"/@" + dispname
-                s=get_folder_size(ARMA_ROOT+os.sep+moddir)
-                moddirs.append(moddir)
-                if not steamid is None:
-                    check.append(moditem)
-                lognotice("modfolder {} found : {} ({})".format(i, moddir, float(s)/1048576))
-            elif not steamid is None and "mods/" + steamid in local_mods: 
-                moddir = type+"/" + steamid
-                moddirs.append(moddir)
-                lognotice("modfolder {} found: {} for {}".format(i, moddir, dispname))
-                check.append(moditem)
-            elif not steamid is None:
-                logwarning("modfolder {} not found: @{} or {}".format(i, dispname, steamid))
-                moddir = type+"/" + steamid
-                moddirs.append(moddir)
-                mis.append(moditem)
-            i+=1
-            
-        if len(mis) > 0:
-            lognotice("downloading mods: {}".format(mis))
-            steam_download(mis, type=type)
-        if len(check) > 0:
-            lognotice("check for update of mods: {} ({})".format(check, len(check)))
-            steam_download(check, type=type, validate=True)
-        moddirs=[]
-        for dispname,steamid in cfg_list:
-            link_it(steamid, type+"/@" + dispname)
-            moddirs.append( type+"/@" + dispname)
-    return moddirs
+    logdebug("creating {}".format(to_make))
+    for item in to_make:
+        make_sure_dir(item, silent=True)
+    logdebug("linking {}".format(to_link))
+    for item_from, item_to in to_link:
+        link_it(item_from, item_to, silent=True)
 
-def correct_server_mods(smods):
-    mods = []
-    WORK_SMODS
-    for mod in smods:
-        modname=os.path.basename(os.path.normpath(mod))
-        mods.append(mods)
-    return mods
+def parse_json_config(): # bool
+    global SERVER_BASE
+    global PARAM_FILE
+    global CONFIG_FILE
+    global PRESET_FILE
+    global NEW_SRVMOD_LIST
+    global NEW_MOD_LIST
+    global NEW_MAPS_LIST
+
+    jconfig=None
+    if os.path.exists(JSON_CONFIG):
+        lognotice("found server.json override file")
+        with open(JSON_CONFIG) as f:
+            try:
+                jconfig = json.load(f)
+            except:
+                logerror("failed to load {}".format(JSON_CONFIG))
+                return False
+
+    if not jconfig is None:
+        active_jcname=jconfig.get("config-name", None);
+        debug_skip_install=jconfig.get("debug_skip_install", False)
+        if debug_skip_install:
+            logwarning("skipping arma3 install and update - use at own risk!")
+
+        if not active_jcname is None:
+            lognotice("config {} is selected in json file".format(active_jcname))
+            active_jc=jconfig.get("configs",{}).get(active_jcname, None)
+            if not active_jc is None:
+                if "server-config-file" in active_jc:
+                    lognotice("overwrite ARMA_CONFIG with {}".format(active_jc["server-config-file"]))
+                    os.environ["ARMA_CONFIG"] = active_jc["server-config-file"]
+                    CONFIG_FILE = FOLDER_CONFIG+os.sep+os.environ["ARMA_CONFIG"]
+                if "server-parameters" in active_jc:
+                    lognotice("overwrite ARMA_PARAMS with {}".format(active_jc["server-parameters"]))
+                    os.environ["ARMA_PARAMS"] = active_jc["server-parameters"]
+                    PARAM_FILE = "/does-not-exist"
+                if "server-base-file" in active_jc:
+                    lognotice("overwrite BASIC_CONFIG with {}".format(active_jc["server-base-file"]))
+                    os.environ["BASIC_CONFIG"] = active_jc["server-base-file"]
+                    SERVER_BASE = FOLDER_CONFIG+os.sep+os.environ["BASIC_CONFIG"]
+                if "servermods" in active_jc:
+                    NEW_SRVMOD_LIST=active_jc["servermods"]
+                if "mods" in active_jc:
+                    NEW_MOD_LIST=active_jc["mods"]
+                if "maps" in active_jc:
+                    NEW_MAPS_LIST=active_jc["maps"]
+                    
+                elif "mod-config-file" in active_jc:
+                    lognotice("overwrite MODS_PRESET with {}".format(active_jc["mod-config-file"]))
+                    os.environ["MODS_PRESET"] = active_jc["mod-config-file"]
+                    PRESET_FILE = FOLDER_CONFIG+os.sep+os.environ["MODS_PRESET"]
+                if "num-headless" in active_jc:
+                    lognotice("overwrite HEADLESS_CLIENTS with {}".format(active_jc["num-headless"]))
+                    os.environ["HEADLESS_CLIENTS"]=str(active_jc["num-headless"])
+                if not active_jc.get("creator-dlc", None) is None:
+                    if active_jc["creator-dlc"].get("enable-creator", False):
+                        os.environ["STEAM_BRANCH"]="creatordlc"
+                        os.environ["STEAM_BRANCH_PASSWORD"]=""
+                        os.environ["ARMA_CDLC"]=""
+                    if active_jc["creator-dlc"].get("csla-iron-curtain", False):
+                        if len(os.environ["ARMA_CDLC"]) > 0:
+                            os.environ["ARMA_CDLC"]+=";"
+                        os.environ["ARMA_CDLC"]+="csla"
+                    if active_jc["creator-dlc"].get("global-mobilization-cold-war", False):
+                        if len(os.environ["ARMA_CDLC"]) > 0:
+                            os.environ["ARMA_CDLC"]+=";"
+                        os.environ["ARMA_CDLC"]+="gm"
+                    if active_jc["creator-dlc"].get("s.o.g.-prairie-fire", False):
+                        if len(os.environ["ARMA_CDLC"]) > 0:
+                            os.environ["ARMA_CDLC"]+=";"
+                        os.environ["ARMA_CDLC"]+="vn"
+                    if active_jc["creator-dlc"].get("western-sahara", False):
+                        if len(os.environ["ARMA_CDLC"]) > 0:
+                            os.environ["ARMA_CDLC"]+=";"
+                        os.environ["ARMA_CDLC"]+="ws"
+                    if active_jc["creator-dlc"].get("spearhead-1944", False):
+                        if len(os.environ["ARMA_CDLC"]) > 0:
+                            os.environ["ARMA_CDLC"]+=";"
+                        os.environ["ARMA_CDLC"]+="spe"
+            else:
+                logerror("no config entry with key {} found in json file".format(active_jcname))
+                return False
+        else:
+            logerror("no parameter \"config-name\" set in config")
+            return False
+    return True
+
+def link_external_share_with_workshop(): # bool
+    link_servermods=[]
+    link_mods=[]
+    link_maps=[]
+    workshop_download=[]
+    workshop_download_t0=[]
+    result=True
+
+    srvmod_path=THIS_SHARE_ARMA_ROOT+os.sep+"servermods"+os.sep
+    lognotice("workshop - servermods: {}".format(NEW_SRVMOD_LIST))
+    for dispname, steamid in NEW_SRVMOD_LIST:
+        if not os.path.exists(srvmod_path+steamid):
+            os.makedirs(srvmod_path+steamid)
+        link_servermods.append([dispname, srvmod_path+steamid, WORKSHOP_DIR+os.sep+steamid])
+        workshop_download.append([dispname, steamid])
+
+    priv_mod_path=THIS_SHARE_ARMA_ROOT+os.sep+"mods"+os.sep
+    pub_mod_path=COMMON_SHARE_ARMA_ROOT+os.sep+"mods"+os.sep
+    lognotice("workshop - mods: {}".format(NEW_MOD_LIST))
+    for dispname, steamid in NEW_MOD_LIST:
+        if os.path.exists(priv_mod_path+steamid):
+            link_mods.append([dispname, priv_mod_path+steamid, WORKSHOP_DIR+os.sep+steamid])
+        elif not os.path.exists(pub_mod_path+steamid):
+            os.makedirs(srvmod_path+steamid)
+            link_mods.append([dispname, pub_mod_path+steamid, WORKSHOP_DIR+os.sep+steamid])
+        else:
+            link_mods.append([dispname, pub_mod_path+steamid, WORKSHOP_DIR+os.sep+steamid])
+        workshop_download.append([dispname, steamid])
+
+    map_path=COMMON_SHARE_ARMA_ROOT+os.sep+"maps"+os.sep
+    lognotice("workshop - maps: {}".format(NEW_MAPS_LIST))
+    for dispname, steamid in NEW_MAPS_LIST:
+        if not os.path.exists(map_path+steamid):
+            os.makedirs(map_path+steamid)
+        link_maps.append([dispname, map_path+steamid, WORKSHOP_DIR+os.sep+steamid])
+        workshop_download.append([dispname, steamid])
+
+    logdebug("linking servermods to workshop {}".format(link_servermods))
+    for _, item_from, item_to in link_servermods:
+        link_it(item_from, item_to, silent=True)
+    
+    logdebug("linking mods to workshop {}".format(link_mods))
+    for _, item_from, item_to in link_mods:
+        link_it(item_from, item_to, silent=True)
+
+    logdebug("linking maps to workshop {}".format(link_maps))
+    for _, item_from, item_to, _ in link_maps:
+        link_it(item_from, item_to, silent=True)
+    
+    # now all mods are linked to the workshop folder, regardless if already downloaded or not
+    # we'll now check for updates or if folder is empty and download if necessary
+
+    for dispname, steamid in workshop_download:
+        up_dt=get_last_update(steamid)
+        act_dt=datetime.now().replace(year=1984)
+        datecfg=WORKSHOP_DIR+os.sep+steamid+os.sep+"srvdon_info.cfg"
+        if not os.path.exists(datecfg):
+            with open(datecfg, "w") as f:
+                f.write(act_dt.strftime("%Y-%m-%d %H:%M:%S"))
+        else:
+            try:
+                with open(datecfg, "r") as f:
+                    act_dt=datetime.strptime(f.read(), "%Y-%m-%d %H:%M:%S")
+            except ValueError:
+                logerror("failed to get update time from {}".format(datecfg))
+                os.remove(datecfg)
+                result=False
+
+        if len(os.listdir(WORKSHOP_DIR+os.sep+steamid)) < 2:
+            workshop_download_t0.append([dispname, steamid, act_dt, up_dt])
+        elif up_dt > act_dt:
+            workshop_download_t0.append([dispname, steamid, act_dt, up_dt])
+
+    # now we have all mods with empty folder or with an update
+    logdebug("downloading or updating mods: {}".format(workshop_download_t0))
+    for dispname, steamid, file_dt, remote_dt in workshop_download_t0:
+        steamcmd = ["/steamcmd/steamcmd.sh"]
+        steamcmd.extend(["+force_install_dir", "/tmp"])
+        steamcmd.extend(["+login", os.environ["STEAM_USER"], os.environ["STEAM_PASSWORD"]])
+        steamcmd.extend(["+workshop_download_item", "107410", steamid, "validate"])
+        steamcmd.extend(["+quit"])
+        lognotice("mod downloading: {} ({})".format(dispname, steamid))
+        #subprocess.call(steamcmd)
+        proc = subprocess.Popen(steamcmd,stdout=subprocess.PIPE, stderr=subprocess.PIPE, creationflags=subprocess_flags)
+        proc.wait()
+        (stdout, stderr) = proc.communicate()
+
+        if proc.returncode != 0:
+            logerror("{}".format(stderr))
+            result=False
+        else:
+            datecfg=WORKSHOP_DIR+os.sep+steamid+os.sep+"srvdon_info.cfg"
+            with open(datecfg, "w") as f:
+                f.write(remote_dt.strftime("%Y-%m-%d %H:%M:%S"))
+                lognotice("updated mod update time of {} to {}".format(datecfg, up_dt.strftime("%Y-%m-%d %H:%M:%S")) )
+
+    # as last step we have to sanitize the folder names, extract all server keys and link those with
+    # a proper name to the arma3 folder
+    for dispname, steamid in workshop_download:
+        fix_folder_characters(WORKSHOP_DIR+os.sep+steamid)
+        copy_key(WORKSHOP_DIR+os.sep+steamid, FOLDER_KEYS, dispname)
+
+    final_links=[]
+    final_mods=[]
+    final_srvmods=[]
+    for dispname, steamid in NEW_SRVMOD_LIST:
+        san_dispname="@"+dispname.replace(":","-").rstrip(".,")
+        final_links.append([WORKSHOP_DIR+os.sep+steamid, FOLDER_SERVERMODS+os.sep+san_dispname])
+        final_srvmods.append("servermods/"+san_dispname)
+
+    for dispname, steamid in NEW_MOD_LIST:
+        san_dispname="@"+dispname.replace(":","-").rstrip(".,")
+        final_links.append([WORKSHOP_DIR+os.sep+steamid, FOLDER_MODS+os.sep+san_dispname])
+        final_mods.append("mods/"+san_dispname)
+
+    for dispname, steamid in NEW_MAPS_LIST:
+        san_dispname="@"+dispname.replace(":","-").rstrip(".,")
+        final_links.append([WORKSHOP_DIR+os.sep+steamid, FOLDER_MODS+os.sep+san_dispname])
+        final_mods.append("mods/"+san_dispname)
+
+    logdebug("linking {}".format(final_links))
+    for item_from, item_to in final_links:
+        link_it(item_from, item_to, silent=True)
+
+    return True,final_srvmods,final_mods
+
 
 
 print("\n\nHALLO WELT, HALLO DON!\n", flush=True)
@@ -309,153 +490,20 @@ debug_skip_install=False
     
 lognotice("\npreparing server...")
 
-for item in os.listdir(ARMA_ROOT):
-    if item == "steamapps" or item == "battleye":
-        continue
-    if os.path.islink(item):
-        logdebug("unlink {}".format(item))
-        os.unlink(item)
-    elif os.path.isdir(item):
-        logdebug("rm {}".format(item))
-        shutil.rmtree(item)
-    else:
-        logwarning("unknown {}".format(item))
-if os.path.exists(WORKSHOP_DIR):
-    logdebug("rm {}".format(WORKSHOP_DIR))
-    shutil.rmtree(WORKSHOP_DIR)
-# prepare folders from outside and inside
+# remove folder and links and prepare new ones
+startup_folder_clean_prepare()
 
-make_sure_dir(FOLDER_KEYS)
-make_sure_dir(FOLDER_MODS)
-make_sure_dir(FOLDER_SERVERMODS)
-make_sure_dir(WORKSHOP_DIR)
-#make_sure_dir(FOLDER_ADDONS)
-#make_sure_dir(FOLDER_MPISSIONS)
- 
-link_it(THIS_SHARE_ARMA_ROOT+"/config", ARMA_ROOT+"/config")
-link_it(THIS_SHARE_ARMA_ROOT+"/userconfig", ARMA_ROOT+"/userconfig")
-link_it(THIS_SHARE_ARMA_ROOT+"/logs", ARMA_ROOT+"/logs")
+if not parse_json_config():
+    logerror("failed to handle json config file, terminating")
+    exit(1)
 
-if os.path.exists(THIS_SHARE_ARMA_ROOT+"/mpmissions"):
-    link_it(THIS_SHARE_ARMA_ROOT+"/mpmissions", ARMA_ROOT+"/mpmissions")
-
-#if os.path.exists(THIS_SHARE_ARMA_ROOT+"/maps"):
-#    link_it(THIS_SHARE_ARMA_ROOT+"/maps", ARMA_ROOT+"/maps")
-
-#if os.path.exists(COMMON_SHARE_ARMA_ROOT+"/maps"):
-#    for item in os.listdir(COMMON_SHARE_ARMA_ROOT+"/maps"):
-#        src=os.path.join(COMMON_SHARE_ARMA_ROOT+"/maps", item)
-#        fix_folder_characters(src)
-#        link_it(src, FOLDER_MODS+os.sep+item)
-#        copy_key(FOLDER_MODS+os.sep+item, FOLDER_KEYS)
-
-    
-lognotice("1 - processing THIS_SHARE_ARMA_ROOT/servermods: {}".format(THIS_SHARE_ARMA_ROOT+"/servermods"))     
-for item in os.listdir(THIS_SHARE_ARMA_ROOT+"/servermods"):
-    src=os.path.join(THIS_SHARE_ARMA_ROOT+"/servermods", item)
-    fix_folder_characters(src)
-    link_it(src, FOLDER_SERVERMODS+os.sep+item)
-    copy_key(FOLDER_SERVERMODS+os.sep+item, FOLDER_KEYS)
-
-lognotice("2 - processing THIS_SHARE_ARMA_ROOT/mods: {}".format(THIS_SHARE_ARMA_ROOT+"/mods"))         
-for item in os.listdir(THIS_SHARE_ARMA_ROOT+"/mods"):
-    src=os.path.join(THIS_SHARE_ARMA_ROOT+"/mods", item)
-    fix_folder_characters(src)
-    link_it(src, FOLDER_MODS+os.sep+item)
-    copy_key(FOLDER_MODS+os.sep+item, FOLDER_KEYS)
-    
-lognotice("3 - processing COMMON_SHARE_ARMA_ROOT/mods: {}".format(COMMON_SHARE_ARMA_ROOT+"/mods"))    
-for item in os.listdir(COMMON_SHARE_ARMA_ROOT+"/mods"):
-    src=os.path.join(COMMON_SHARE_ARMA_ROOT+"/mods", item)
-    fix_folder_characters(src)
-    link_it(src, FOLDER_MODS+os.sep+item)
-    copy_key(FOLDER_MODS+os.sep+item, FOLDER_KEYS)
-
-lognotice("4 - processing COMMON_SHARE_ARMA_ROOT/dlcs: {}".format(COMMON_SHARE_ARMA_ROOT+"/dlcs")) 
-for item in os.listdir(COMMON_SHARE_ARMA_ROOT+"/dlcs"):
-    src=os.path.join(COMMON_SHARE_ARMA_ROOT+"/dlcs", item)
-    fix_folder_characters(src)
-    link_it(src, ARMA_ROOT+os.sep+item)
-    copy_key(ARMA_ROOT+os.sep+item, FOLDER_KEYS)
-
-lognotice("\nchecking for json config...")
-
-jconfig=None
-if os.path.exists(JSON_CONFIG):
-    lognotice("found server.json override file")
-    with open(JSON_CONFIG) as f:
-        try:
-            jconfig = json.load(f)
-        except:
-            logerror("failed to load {}".format(JSON_CONFIG))
-
-if not jconfig is None:
-    active_jcname=jconfig.get("config-name", None);
-    debug_skip_install=jconfig.get("debug_skip_install", False)
-    if not active_jcname is None:
-        lognotice("config {} is selected in json file".format(active_jcname))
-        active_jc=jconfig.get("configs",{}).get(active_jcname, None)
-        if not active_jc is None:
-            if "server-config-file" in active_jc:
-                lognotice("overwrite ARMA_CONFIG with {}".format(active_jc["server-config-file"]))
-                os.environ["ARMA_CONFIG"] = active_jc["server-config-file"]
-                CONFIG_FILE = FOLDER_CONFIG+os.sep+os.environ["ARMA_CONFIG"]
-            if "server-parameters" in active_jc:
-                lognotice("overwrite ARMA_PARAMS with {}".format(active_jc["server-parameters"]))
-                os.environ["ARMA_PARAMS"] = active_jc["server-parameters"]
-                PARAM_FILE = "/does-not-exist"
-            if "server-base-file" in active_jc:
-                lognotice("overwrite BASIC_CONFIG with {}".format(active_jc["server-base-file"]))
-                os.environ["BASIC_CONFIG"] = active_jc["server-base-file"]
-                SERVER_BASE = FOLDER_CONFIG+os.sep+os.environ["BASIC_CONFIG"]
-            if "servermods" in active_jc:
-                NEW_SRVMOD_LIST=active_jc["servermods"]
-                logwarning("validating servermods: {}".format(NEW_SRVMOD_LIST))
-            if "mods" in active_jc:
-                NEW_MOD_LIST=active_jc["mods"]
-                logwarning("validating mods: {}".format(NEW_MOD_LIST))
-            elif "mod-config-file" in active_jc:
-                lognotice("overwrite MODS_PRESET with {}".format(active_jc["mod-config-file"]))
-                os.environ["MODS_PRESET"] = active_jc["mod-config-file"]
-                PRESET_FILE = FOLDER_CONFIG+os.sep+os.environ["MODS_PRESET"]
-            if "num-headless" in active_jc:
-                lognotice("overwrite HEADLESS_CLIENTS with {}".format(active_jc["num-headless"]))
-                os.environ["HEADLESS_CLIENTS"]=str(active_jc["num-headless"])
-            if not active_jc.get("creator-dlc", None) is None:
-                if active_jc["creator-dlc"].get("enable-creator", False):
-                    os.environ["STEAM_BRANCH"]="creatordlc"
-                    os.environ["STEAM_BRANCH_PASSWORD"]=""
-                    os.environ["ARMA_CDLC"]=""
-                if active_jc["creator-dlc"].get("csla-iron-curtain", False):
-                    if len(os.environ["ARMA_CDLC"]) > 0:
-                        os.environ["ARMA_CDLC"]+=";"
-                    os.environ["ARMA_CDLC"]+="csla"
-                if active_jc["creator-dlc"].get("global-mobilization-cold-war", False):
-                    if len(os.environ["ARMA_CDLC"]) > 0:
-                        os.environ["ARMA_CDLC"]+=";"
-                    os.environ["ARMA_CDLC"]+="gm"
-                if active_jc["creator-dlc"].get("s.o.g.-prairie-fire", False):
-                    if len(os.environ["ARMA_CDLC"]) > 0:
-                        os.environ["ARMA_CDLC"]+=";"
-                    os.environ["ARMA_CDLC"]+="vn"
-                if active_jc["creator-dlc"].get("western-sahara", False):
-                    if len(os.environ["ARMA_CDLC"]) > 0:
-                        os.environ["ARMA_CDLC"]+=";"
-                    os.environ["ARMA_CDLC"]+="ws"
-                if active_jc["creator-dlc"].get("spearhead-1944", False):
-                    if len(os.environ["ARMA_CDLC"]) > 0:
-                        os.environ["ARMA_CDLC"]+=";"
-                    os.environ["ARMA_CDLC"]+="spe"
-        else:
-            logerror("no config entry with key {} found in json file".format(active_jcname))
-                        
-
-
-link_it(COMMON_SHARE_ARMA_ROOT+"/basic.cfg", ARMA_ROOT+"/basic.cfg")
+# link mods, servermods and maps to the workshop items
+result, server_mods, mods=link_external_share_with_workshop()
+if not result:
+    logerror("workshop item interlink failed")
+    exit(1)
 
 # add the server itself
-
-
 lognotice("\ninstall / update arma server binary...")
     
 if os.environ["SKIP_INSTALL"] in ["", "false"] and debug_skip_install==False:
@@ -474,36 +522,6 @@ if os.environ["SKIP_INSTALL"] in ["", "false"] and debug_skip_install==False:
     subprocess.call(steamcmd)
 
 # Mods
-
-
-lognotice("\nchecking mods...")
-
-
-mods = []
-local_mods = []     # all possible mods
-preset_mods = []
-server_mods=[]
-
-if os.path.exists(ARMA_ROOT+os.sep+"mods"):
-    local_mods.extend(get_mods_from_dir(FOLDER_MODS))
-
-if not NEW_MOD_LIST is None:
-    preset_mods.extend(filter_preset_mods(local_mods, cfg_list=NEW_MOD_LIST))
-    mods.extend(preset_mods)
-elif os.environ["MODS_PRESET"] != "":
-    preset_mods.extend(filter_preset_mods(local_mods, preset_file=PRESET_FILE))
-    mods.extend(preset_mods)
-
-mods_size=0
-for mod in mods:
-    mods_size+=get_folder_size(ARMA_ROOT+os.sep+mod)
-
-lognotice("estimated size of mods: {}".format(mods_size))
-
-server_mods=get_mods_from_dir(FOLDER_SERVERMODS, type="servermods")
-if not NEW_SRVMOD_LIST is None:
-    lognotice("{} --- {}".format(server_mods,NEW_SRVMOD_LIST))
-    server_mods=filter_preset_mods(server_mods, cfg_list=NEW_SRVMOD_LIST, type="servermods")
 
 launch = "{} -filePatching -limitFPS={} -world={} {} {}".format(
     os.environ["ARMA_BINARY"],
