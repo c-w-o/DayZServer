@@ -61,6 +61,23 @@ def logerror(what, silent=False):
 def mod_param(name, mods):
     return ' -{}="{}" '.format(name, ";".join(mods))
 
+def check_double_mods(mod_list):
+    e=[]
+    id=[]
+    name=[]
+    r=True
+    for dispname, steamid in mod_list:
+        if not dispname in name and not steamid in id:
+            e.append([dispname, steamid])
+            id.append(steamid)
+            name.append(dispname)
+        elif not steamid in id and dispname in name:
+            logerror("modname {} is used multiple times".format(dispname))
+            r=False
+        else:
+            logerror("steamid {} is used multiple times".format(steamid))
+            r=False
+    return r,e
 
 def env_defined(key):
     return key in os.environ and len(os.environ[key]) > 0
@@ -309,14 +326,28 @@ def parse_json_config(): # bool
                     lognotice("overwrite BASIC_CONFIG with {}".format(active_jc["server-base-file"]))
                     os.environ["BASIC_CONFIG"] = active_jc["server-base-file"]
                     SERVER_BASE = FOLDER_CONFIG+os.sep+os.environ["BASIC_CONFIG"]
+
+                modresult=True
                 if "servermods" in active_jc:
                     NEW_SRVMOD_LIST=active_jc["servermods"]
+                    r,NEW_SRVMOD_LIST=check_double_mods(NEW_SRVMOD_LIST)
+                    if not r:
+                        modresult=False
                 if "mods" in active_jc:
                     NEW_MOD_LIST=active_jc["mods"]
+                    r,NEW_MOD_LIST=check_double_mods(NEW_MOD_LIST)
+                    if not r:
+                        modresult=False
                 if "maps" in active_jc:
                     NEW_MAPS_LIST=active_jc["maps"]
-                    
-                elif "mod-config-file" in active_jc:
+                    r,NEW_MAPS_LIST=check_double_mods(NEW_MAPS_LIST)
+                    if not r:
+                        modresult=False
+                        
+                if not modresult:
+                    return False
+
+                if "mod-config-file" in active_jc:
                     lognotice("overwrite MODS_PRESET with {}".format(active_jc["mod-config-file"]))
                     os.environ["MODS_PRESET"] = active_jc["mod-config-file"]
                     PRESET_FILE = FOLDER_CONFIG+os.sep+os.environ["MODS_PRESET"]
@@ -379,7 +410,7 @@ def link_external_share_with_workshop(): # bool
         if os.path.exists(priv_mod_path+steamid):
             link_mods.append([dispname, priv_mod_path+steamid, WORKSHOP_DIR+os.sep+steamid])
         elif not os.path.exists(pub_mod_path+steamid):
-            os.makedirs(srvmod_path+steamid)
+            os.makedirs(pub_mod_path+steamid)
             link_mods.append([dispname, pub_mod_path+steamid, WORKSHOP_DIR+os.sep+steamid])
         else:
             link_mods.append([dispname, pub_mod_path+steamid, WORKSHOP_DIR+os.sep+steamid])
@@ -402,7 +433,7 @@ def link_external_share_with_workshop(): # bool
         link_it(item_from, item_to, silent=True)
 
     logdebug("linking maps to workshop {}".format(link_maps))
-    for _, item_from, item_to, _ in link_maps:
+    for _, item_from, item_to in link_maps:
         link_it(item_from, item_to, silent=True)
     
     # now all mods are linked to the workshop folder, regardless if already downloaded or not
@@ -439,12 +470,13 @@ def link_external_share_with_workshop(): # bool
         steamcmd.extend(["+quit"])
         lognotice("mod downloading: {} ({})".format(dispname, steamid))
         #subprocess.call(steamcmd)
-        proc = subprocess.Popen(steamcmd,stdout=subprocess.PIPE, stderr=subprocess.PIPE, creationflags=subprocess_flags)
+        proc = subprocess.Popen(steamcmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = proc.communicate()
+        lognotice("download or updating {} ({})".format(dispname, steamid))
         proc.wait()
-        (stdout, stderr) = proc.communicate()
 
         if proc.returncode != 0:
-            logerror("{}".format(stderr))
+            logerror("failed to download or upadate {} ({}): {}/n{}".format(dispname, steamid, stderr, stdout))
             result=False
         else:
             datecfg=WORKSHOP_DIR+os.sep+steamid+os.sep+"srvdon_info.cfg"
