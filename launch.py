@@ -343,7 +343,7 @@ def parse_json_config(): # bool
                     r,NEW_MAPS_LIST=check_double_mods(NEW_MAPS_LIST)
                     if not r:
                         modresult=False
-                        
+
                 if not modresult:
                     return False
 
@@ -468,15 +468,27 @@ def link_external_share_with_workshop(): # bool
         steamcmd.extend(["+login", os.environ["STEAM_USER"], os.environ["STEAM_PASSWORD"]])
         steamcmd.extend(["+workshop_download_item", "107410", steamid, "validate"])
         steamcmd.extend(["+quit"])
-        lognotice("mod downloading: {} ({})".format(dispname, steamid))
-        #subprocess.call(steamcmd)
-        proc = subprocess.Popen(steamcmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout, stderr = proc.communicate()
         lognotice("download or updating {} ({})".format(dispname, steamid))
-        proc.wait()
-
-        if proc.returncode != 0:
-            logerror("failed to download or upadate {} ({}): {}/n{}".format(dispname, steamid, stderr, stdout))
+        #lognotice("mod downloading: {} ({})".format(dispname, steamid))
+        returncode=subprocess.run(steamcmd).returncode
+        #proc = subprocess.Popen(steamcmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        #proc = subprocess.Popen(steamcmd, shell=True)
+        #stdout, stderr = proc.communicate()
+        #proc.wait()
+        retry_count=6
+        while returncode == 10 and retry_count>0:
+            steamcmd = ["/steamcmd/steamcmd.sh"]
+            steamcmd.extend(["+force_install_dir", "/tmp"])
+            steamcmd.extend(["+login", os.environ["STEAM_USER"], os.environ["STEAM_PASSWORD"]])
+            steamcmd.extend(["+workshop_download_item", "107410", steamid, "validate"])
+            steamcmd.extend(["+quit"])
+            logwarning("previous download of {} ({}) timed out, try again".format(dispname, steamid))
+            returncode=subprocess.run(steamcmd).returncode
+            retry_count=retry_count-1
+            
+            
+        if returncode != 0:
+            logerror("failed to download or upadate {} ({}) => {}".format(dispname, steamid, returncode))
             result=False
         else:
             datecfg=WORKSHOP_DIR+os.sep+steamid+os.sep+"srvdon_info.cfg"
@@ -494,17 +506,17 @@ def link_external_share_with_workshop(): # bool
     final_mods=[]
     final_srvmods=[]
     for dispname, steamid in NEW_SRVMOD_LIST:
-        san_dispname="@"+dispname.replace(":","-").rstrip(".,")
+        san_dispname="@"+dispname.replace(":","-").replace("/","_").replace("\\","_").rstrip(".,")
         final_links.append([WORKSHOP_DIR+os.sep+steamid, FOLDER_SERVERMODS+os.sep+san_dispname])
         final_srvmods.append("servermods/"+san_dispname)
 
     for dispname, steamid in NEW_MOD_LIST:
-        san_dispname="@"+dispname.replace(":","-").rstrip(".,")
+        san_dispname="@"+dispname.replace(":","-").replace("/","_").replace("\\","_").rstrip(".,")
         final_links.append([WORKSHOP_DIR+os.sep+steamid, FOLDER_MODS+os.sep+san_dispname])
         final_mods.append("mods/"+san_dispname)
 
     for dispname, steamid in NEW_MAPS_LIST:
-        san_dispname="@"+dispname.replace(":","-").rstrip(".,")
+        san_dispname="@"+dispname.replace(":","-").replace("/","_").replace("\\","_").rstrip(".,")
         final_links.append([WORKSHOP_DIR+os.sep+steamid, FOLDER_MODS+os.sep+san_dispname])
         final_mods.append("mods/"+san_dispname)
 
@@ -518,7 +530,6 @@ def link_external_share_with_workshop(): # bool
 
 print("\n\nHALLO WELT, HALLO DON!\n", flush=True)
 debug_skip_install=False
-
     
 lognotice("\npreparing server...")
 
