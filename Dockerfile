@@ -13,6 +13,7 @@ RUN apt-get update \
         lib32stdc++6 \
         lib32gcc-s1 \
         libcurl4 \
+        libcap2 \
         wget \
         ca-certificates \
     && \
