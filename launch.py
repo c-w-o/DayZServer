@@ -102,12 +102,12 @@ def link_it(what, to, silent=False):
     else:
         logwarning("{} exists, cannot link {}".format(to, what))
 
-def copy_key(moddir, keyfolder, dispname=""):
+def copy_key(moddir, keyfolder, steamid, dispname=""):
     keys = glob.glob(os.path.join(moddir, "**/*.bikey"))
     if len(keys) > 0:
         for key in keys:
             if not os.path.isdir(key):
-                shutil.copy2(key, keyfolder)
+                shutil.copy2(key, keyfolder+os.sep+steamid+"_"+os.path.basename(key))
     else:
         logwarning("Missing keys: {} ({})".format(moddir, dispname))
         
@@ -170,73 +170,7 @@ def get_last_update(steamid):
         return dt
         
     logerror("failed to find any release or update date, using fallback-default of {}".format(dt.strftime("%Y-%m-%d %H:%M:%S")))
-    return dt
-
-        
-def steam_download(mods, type="mods", validate=False):
-    if len(mods) == 0:
-        return
-    share_dir=""
-    if type=="mods":
-        share_dir=COMMON_SHARE_ARMA_ROOT+os.sep+"mods"+os.sep
-    elif type=="servermods":
-        share_dir=THIS_SHARE_ARMA_ROOT+os.sep+"servermods"+os.sep
-    else:
-        logerror("whoops type={}".format(type))
-    
-        
-    for dispname, steamid in mods:
-        run_steamcmd=False
-        up_dt=datetime.now().replace(year=1984)
-        datecfg=share_dir+steamid+os.sep+"srvdon_info.cfg"
-        if os.path.exists(share_dir+steamid):
-            if not os.path.exists(datecfg):
-                with open(datecfg, "w") as f:
-                    dt=datetime.now().replace(year=1984)
-                    f.write(dt.strftime("%Y-%m-%d %H:%M:%S"))
-                    logwarning("failed to find last update time, setting default for {} to {}".format(datecfg, dt.strftime("%Y-%m-%d %H:%M:%S")) )
-            if validate:
-                act_dt=datetime.now().replace(year=1984)
-                try:
-                    with open(datecfg, "r") as f:
-                        act_dt=datetime.strptime(f.read(), "%Y-%m-%d %H:%M:%S")
-                except ValueError:
-                    logerror("failed to get update time from {}".format(datecfg))
-                    os.remove(datecfg)
-                    act_dt=datetime.now().replace(year=1984)
-                up_dt=get_last_update(steamid)
-                if up_dt is None:
-                    logwarning("mod {} ({}) not found".format(dispname, steamid))
-                elif up_dt > act_dt:
-                    run_steamcmd=True
-                else:
-                    lognotice("mod {} ({}) seems to be up to date".format(dispname, steamid))
-        else:
-            make_sure_dir(share_dir+steamid)
-            run_steamcmd=True
-            logwarning("getting release date of mod {} ({})".format(dispname, steamid))
-            up_dt=get_last_update(steamid)
-            link_it(share_dir+steamid, WORKSHOP_DIR+steamid)
-        
-        if run_steamcmd:
-            steamcmd = ["/steamcmd/steamcmd.sh"]
-            steamcmd.extend(["+force_install_dir", "/tmp"])
-            steamcmd.extend(["+login", os.environ["STEAM_USER"], os.environ["STEAM_PASSWORD"]])
-            steamcmd.extend(["+workshop_download_item", "107410", steamid, "validate"])
-            steamcmd.extend(["+quit"])
-            lognotice("mod downloading: {} ({}): {}".format(dispname, steamid, steamcmd));
-            subprocess.call(steamcmd)
-            with open(datecfg, "w") as f:
-                f.write(up_dt.strftime("%Y-%m-%d %H:%M:%S"))
-                lognotice("updated mod update time of {} to {}".format(datecfg, up_dt.strftime("%Y-%m-%d %H:%M:%S")) )
-            
-        if type=="mods":
-            link_it(share_dir, FOLDER_MODS+os.sep+steamid, silent=True)
-            copy_key(FOLDER_MODS+os.sep+steamid, FOLDER_KEYS)
-        elif type=="servermods":
-            link_it(share_dir, FOLDER_SERVERMODS+os.sep+steamid, silent=True)
-            copy_key(FOLDER_SERVERMODS+os.sep+steamid, FOLDER_KEYS)
-            
+    return dt          
 
 def startup_folder_clean_prepare():
     to_unlink=[]
@@ -333,16 +267,26 @@ def parse_json_config(): # bool
                     r,NEW_SRVMOD_LIST=check_double_mods(NEW_SRVMOD_LIST)
                     if not r:
                         modresult=False
+                    else:
+                        for i in range(len(NEW_SRVMOD_LIST)):
+                            NEW_SRVMOD_LIST[i][0]=NEW_SRVMOD_LIST[i][0].replace(":","-").replace("/","_").replace("\\","_").rstrip(".,")
+                        
                 if "mods" in active_jc:
                     NEW_MOD_LIST=active_jc["mods"]
                     r,NEW_MOD_LIST=check_double_mods(NEW_MOD_LIST)
                     if not r:
                         modresult=False
+                    else:
+                        for i in range(len(NEW_MOD_LIST)):
+                            NEW_MOD_LIST[i][0]=NEW_MOD_LIST[i][0].replace(":","-").replace("/","_").replace("\\","_").rstrip(".,")
                 if "maps" in active_jc:
                     NEW_MAPS_LIST=active_jc["maps"]
                     r,NEW_MAPS_LIST=check_double_mods(NEW_MAPS_LIST)
                     if not r:
                         modresult=False
+                    else:
+                        for i in range(len(NEW_MAPS_LIST)):
+                            NEW_MAPS_LIST[i][0]=NEW_MAPS_LIST[i][0].replace(":","-").replace("/","_").replace("\\","_").rstrip(".,")
 
                 if not modresult:
                     return False
@@ -388,6 +332,7 @@ def parse_json_config(): # bool
     return True
 
 def link_external_share_with_workshop(): # bool
+    
     link_servermods=[]
     link_mods=[]
     link_maps=[]
@@ -400,6 +345,8 @@ def link_external_share_with_workshop(): # bool
     for dispname, steamid in NEW_SRVMOD_LIST:
         if not os.path.exists(srvmod_path+steamid):
             os.makedirs(srvmod_path+steamid)
+            with open(srvmod_path+steamid+"_@"+dispname, "w") as f:
+                f.write("")
         link_servermods.append([dispname, srvmod_path+steamid, WORKSHOP_DIR+os.sep+steamid])
         workshop_download.append([dispname, steamid])
 
@@ -411,6 +358,8 @@ def link_external_share_with_workshop(): # bool
             link_mods.append([dispname, priv_mod_path+steamid, WORKSHOP_DIR+os.sep+steamid])
         elif not os.path.exists(pub_mod_path+steamid):
             os.makedirs(pub_mod_path+steamid)
+            with open(pub_mod_path+steamid+"_@"+dispname, "w") as f:
+                f.write("")
             link_mods.append([dispname, pub_mod_path+steamid, WORKSHOP_DIR+os.sep+steamid])
         else:
             link_mods.append([dispname, pub_mod_path+steamid, WORKSHOP_DIR+os.sep+steamid])
@@ -421,6 +370,8 @@ def link_external_share_with_workshop(): # bool
     for dispname, steamid in NEW_MAPS_LIST:
         if not os.path.exists(map_path+steamid):
             os.makedirs(map_path+steamid)
+            with open(map_path+steamid+"_@"+dispname, "w") as f:
+                f.write("")
         link_maps.append([dispname, map_path+steamid, WORKSHOP_DIR+os.sep+steamid])
         workshop_download.append([dispname, steamid])
 
@@ -463,20 +414,16 @@ def link_external_share_with_workshop(): # bool
     # now we have all mods with empty folder or with an update
     logdebug("downloading or updating mods: {}".format(workshop_download_t0))
     for dispname, steamid, file_dt, remote_dt in workshop_download_t0:
-        steamcmd = ["/steamcmd/steamcmd.sh"]
-        steamcmd.extend(["+force_install_dir", "/tmp"])
-        steamcmd.extend(["+login", os.environ["STEAM_USER"], os.environ["STEAM_PASSWORD"]])
-        steamcmd.extend(["+workshop_download_item", "107410", steamid, "validate"])
-        steamcmd.extend(["+quit"])
-        lognotice("download or updating {} ({})".format(dispname, steamid))
-        #lognotice("mod downloading: {} ({})".format(dispname, steamid))
-        returncode=subprocess.run(steamcmd).returncode
-        #proc = subprocess.Popen(steamcmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        #proc = subprocess.Popen(steamcmd, shell=True)
-        #stdout, stderr = proc.communicate()
-        #proc.wait()
-        retry_count=6
-        while returncode == 10 and retry_count>0:
+        retry_count=12
+        returncode=-1
+        while returncode!=0 and retry_count > 0:
+            if returncode==5:
+                logwarning("Rate Limit Exceeded, sleeping 3 minutes and try again")
+                time.sleep(180)
+            elif returncode==10:
+                logwarning("Timeout during download, will try again in 30 seconds")
+                time.sleep(30)
+            
             steamcmd = ["/steamcmd/steamcmd.sh"]
             steamcmd.extend(["+force_install_dir", "/tmp"])
             steamcmd.extend(["+login", os.environ["STEAM_USER"], os.environ["STEAM_PASSWORD"]])
@@ -485,38 +432,41 @@ def link_external_share_with_workshop(): # bool
             logwarning("previous download of {} ({}) timed out, try again".format(dispname, steamid))
             returncode=subprocess.run(steamcmd).returncode
             retry_count=retry_count-1
-            
-            
-        if returncode != 0:
-            logerror("failed to download or upadate {} ({}) => {}".format(dispname, steamid, returncode))
+
+        datecfg=WORKSHOP_DIR+os.sep+steamid+os.sep+"srvdon_info.cfg"    
+        if returncode!=0:
+            logerror("download of {} ({}) failed".format(dispname, steamid))
+            if os.path.exists(datecfg):
+                os.unlink(datecfg)
+            os.unlink(WORKSHOP_DIR+os.sep+steamid)
             result=False
         else:
-            datecfg=WORKSHOP_DIR+os.sep+steamid+os.sep+"srvdon_info.cfg"
             with open(datecfg, "w") as f:
                 f.write(remote_dt.strftime("%Y-%m-%d %H:%M:%S"))
-                lognotice("updated mod update time of {} to {}".format(datecfg, up_dt.strftime("%Y-%m-%d %H:%M:%S")) )
+                lognotice("updated mod update time of {} ({}) to {}".format(dispname, steamid, up_dt.strftime("%Y-%m-%d %H:%M:%S")) )
+
 
     # as last step we have to sanitize the folder names, extract all server keys and link those with
     # a proper name to the arma3 folder
     for dispname, steamid in workshop_download:
         fix_folder_characters(WORKSHOP_DIR+os.sep+steamid)
-        copy_key(WORKSHOP_DIR+os.sep+steamid, FOLDER_KEYS, dispname)
+        copy_key(WORKSHOP_DIR+os.sep+steamid, FOLDER_KEYS, steamid, dispname)
 
     final_links=[]
     final_mods=[]
     final_srvmods=[]
     for dispname, steamid in NEW_SRVMOD_LIST:
-        san_dispname="@"+dispname.replace(":","-").replace("/","_").replace("\\","_").rstrip(".,")
+        san_dispname="@"+dispname
         final_links.append([WORKSHOP_DIR+os.sep+steamid, FOLDER_SERVERMODS+os.sep+san_dispname])
         final_srvmods.append("servermods/"+san_dispname)
 
     for dispname, steamid in NEW_MOD_LIST:
-        san_dispname="@"+dispname.replace(":","-").replace("/","_").replace("\\","_").rstrip(".,")
+        san_dispname="@"+dispname
         final_links.append([WORKSHOP_DIR+os.sep+steamid, FOLDER_MODS+os.sep+san_dispname])
         final_mods.append("mods/"+san_dispname)
 
     for dispname, steamid in NEW_MAPS_LIST:
-        san_dispname="@"+dispname.replace(":","-").replace("/","_").replace("\\","_").rstrip(".,")
+        san_dispname="@"+dispname
         final_links.append([WORKSHOP_DIR+os.sep+steamid, FOLDER_MODS+os.sep+san_dispname])
         final_mods.append("mods/"+san_dispname)
 
@@ -524,7 +474,7 @@ def link_external_share_with_workshop(): # bool
     for item_from, item_to in final_links:
         link_it(item_from, item_to, silent=True)
 
-    return True,final_srvmods,final_mods
+    return result,final_srvmods,final_mods
 
 
 
